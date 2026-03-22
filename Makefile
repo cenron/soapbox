@@ -1,4 +1,4 @@
-.PHONY: build run test lint swagger docker-up docker-down web-install web-dev web-build web-test web-lint
+.PHONY: build run test lint swagger docker-up docker-down web-install web-dev web-build web-test web-test-e2e web-lint
 
 build: web-build swagger
 	go build -o bin/web ./cmd/web
@@ -35,6 +35,9 @@ web-build:
 
 web-test:
 	cd web && npm test
+
+web-test-e2e:
+	cd web && npm run test:e2e
 
 web-lint:
 	cd web && npm run lint

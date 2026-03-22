@@ -54,7 +54,8 @@ The backend starts at `http://localhost:8080`. The frontend dev server starts at
 | `make web-install` | Install frontend dependencies |
 | `make web-dev` | Start Vite dev server (port 5173) |
 | `make web-build` | Build frontend to `web/dist/` |
-| `make web-test` | Run frontend tests (Vitest) |
+| `make web-test` | Run frontend unit tests (Vitest) |
+| `make web-test-e2e` | Run e2e tests (Playwright, chromium/firefox/webkit) |
 | `make web-lint` | Run frontend linter (ESLint) |
 
 ## Dev services
@@ -120,7 +121,9 @@ The frontend is a React SPA in `web/`, built with Vite and embedded into the Go 
 
 **Production:** `make build` compiles the frontend into `web/dist/`, then embeds it into the Go binary via `go:embed`. The Go server serves the SPA and falls back to `index.html` for client-side routing.
 
-**Testing:** Vitest + React Testing Library. Run with `make web-test`.
+**Unit tests:** Vitest + React Testing Library. Run with `make web-test`.
+
+**E2E tests:** Playwright (chromium, firefox, webkit). Run with `make web-test-e2e`. See `docs/e2e-test-plan.md` for the phased user journey test plan.
 
 **Adding UI components:** `cd web && npx shadcn@latest add <component>` — components land in `src/shared/ui/`.
 
@@ -132,7 +135,8 @@ The frontend is a React SPA in `web/`, built with Vite and embedded into the Go 
 | Frontend | React 19, Vite, TypeScript, shadcn/ui, Tailwind CSS v4 |
 | Routing | React Router v7 (declarative mode) |
 | Server state | TanStack Query v5 |
-| Testing | Vitest, React Testing Library (frontend); Go test (backend) |
+| Unit testing | Vitest, React Testing Library (frontend); Go test (backend) |
+| E2E testing | Playwright (chromium, firefox, webkit) |
 | Database | PostgreSQL 16 (schema-per-module) |
 | Object storage | S3-compatible (MinIO for dev) |
 | Dev email | Mailpit |

@@ -1,0 +1,148 @@
+# E2E Test Plan — User Journey Workflows
+
+This document maps end-to-end Playwright tests to project phases. Each phase adds new user journeys as frontend features are built. Tests accumulate — earlier phases remain and must keep passing.
+
+All e2e tests live in `web/e2e/`. Run with `make web-test-e2e` or `cd web && npm run test:e2e`.
+
+---
+
+## Phase 0B: Frontend Foundation
+
+**Status:** `complete`
+
+| Test file | Journey | What it verifies |
+|-----------|---------|-----------------|
+| `smoke.spec.ts` | App loads | Title renders, nav bar visible, auth buttons present |
+| `navigation.spec.ts` | Page navigation | Login/register links work, 404 page, back-to-home link, public pages accessible |
+| `layout.spec.ts` | Responsive layout | Desktop sidebar visible, mobile sidebar hidden, search input on desktop |
+
+---
+
+## Phase 1: Auth Module
+
+**Status:** `pending`
+
+| Test file | Journey | What it verifies |
+|-----------|---------|-----------------|
+| `auth/register.spec.ts` | New user registration | Fill form → submit → redirect to home, user appears in nav |
+| `auth/login.spec.ts` | Existing user login | Fill form → submit → redirect to home, nav shows username |
+| `auth/logout.spec.ts` | User logout | Click logout → redirect to login, nav shows login/signup |
+| `auth/protected-routes.spec.ts` | Auth guard | Unauthenticated visit to /settings → redirect to /login, after login → redirect back |
+| `auth/oauth.spec.ts` | OAuth flow | OAuth buttons visible, click triggers redirect (mock provider) |
+| `auth/session-refresh.spec.ts` | Silent token refresh | Token expires → app refreshes silently → user stays logged in |
+
+---
+
+## Phase 1: Users Module
+
+**Status:** `pending`
+
+| Test file | Journey | What it verifies |
+|-----------|---------|-----------------|
+| `users/profile-view.spec.ts` | View a profile | Navigate to /@username → see display name, bio, avatar, post/follower counts |
+| `users/profile-edit.spec.ts` | Edit own profile | Settings → update display name/bio → save → changes reflect on profile page |
+| `users/follow.spec.ts` | Follow/unfollow | Visit profile → click follow → count updates, click again → unfollows |
+| `users/followers-list.spec.ts` | Browse followers | Profile → followers tab → list of user cards with follow buttons |
+
+---
+
+## Phase 2: Media Module
+
+**Status:** `pending`
+
+| Test file | Journey | What it verifies |
+|-----------|---------|-----------------|
+| `media/image-upload.spec.ts` | Upload an image | Drag-and-drop or click → preview appears → progress indicator → upload completes |
+
+---
+
+## Phase 2: Posts Module
+
+**Status:** `pending`
+
+| Test file | Journey | What it verifies |
+|-----------|---------|-----------------|
+| `posts/create-post.spec.ts` | Compose a post | Type text → character count updates → submit → post appears in feed |
+| `posts/post-with-image.spec.ts` | Post with image | Attach image → preview visible → submit → post card shows image |
+| `posts/post-with-link.spec.ts` | Post with link | Type URL → link preview auto-generates → submit → preview in post card |
+| `posts/delete-post.spec.ts` | Delete own post | Click delete → confirm → post removed from feed |
+| `posts/like.spec.ts` | Like/unlike a post | Click heart → count increments (optimistic), click again → decrements |
+| `posts/repost.spec.ts` | Repost a post | Click repost → count increments, click again → undoes |
+| `posts/thread.spec.ts` | View a thread | Click post → post detail page → replies visible in order |
+| `posts/reply.spec.ts` | Reply to a post | Open post detail → compose reply → submit → appears in thread |
+| `posts/hashtag.spec.ts` | Hashtag in post | Post with #tag → tag is clickable → navigates to search results |
+
+---
+
+## Phase 3: Feed Module
+
+**Status:** `pending`
+
+| Test file | Journey | What it verifies |
+|-----------|---------|-----------------|
+| `feed/timeline.spec.ts` | Home timeline | Login → home page shows posts from followed users, chronological order |
+| `feed/infinite-scroll.spec.ts` | Pagination | Scroll down → older posts load automatically |
+| `feed/new-posts-banner.spec.ts` | Real-time new posts | New post arrives via WebSocket → "N new posts" banner → click → posts load at top |
+| `feed/empty-state.spec.ts` | New user feed | New user with no follows → empty state with suggestion to follow people |
+
+---
+
+## Phase 3: Notifications Module
+
+**Status:** `pending`
+
+| Test file | Journey | What it verifies |
+|-----------|---------|-----------------|
+| `notifications/badge.spec.ts` | Nav badge | Receive notification → badge appears on nav icon with count |
+| `notifications/list.spec.ts` | Notifications page | Navigate to /notifications → list of activities grouped by type |
+| `notifications/mark-read.spec.ts` | Mark as read | Click notification → marked read, "mark all read" clears badge |
+| `notifications/realtime.spec.ts` | Real-time push | Another user likes post → notification appears without page refresh |
+
+---
+
+## Phase 4: Moderation Module
+
+**Status:** `pending`
+
+| Test file | Journey | What it verifies |
+|-----------|---------|-----------------|
+| `moderation/block.spec.ts` | Block a user | Visit profile → block → their posts disappear from feed |
+| `moderation/mute.spec.ts` | Mute a user | Visit profile → mute → their posts hidden, can unmute from settings |
+| `moderation/report.spec.ts` | Report content | Click report on post/user → modal → select reason → submit → confirmation |
+| `moderation/admin-panel.spec.ts` | Admin review queue | Login as admin → /admin → report queue → resolve report, ban user |
+| `moderation/admin-access.spec.ts` | Admin route protection | Non-admin visits /admin → forbidden or hidden, admin sees admin link in sidebar |
+
+---
+
+## Phase 4: Search Module
+
+**Status:** `pending`
+
+| Test file | Journey | What it verifies |
+|-----------|---------|-----------------|
+| `search/search-users.spec.ts` | Search for users | Type in search bar → results tab shows matching users |
+| `search/search-posts.spec.ts` | Search for posts | Type query → posts tab shows matching posts |
+| `search/search-hashtags.spec.ts` | Search by hashtag | Type #tag → results show posts with that hashtag |
+| `search/debounce.spec.ts` | Search UX | Typing triggers debounced search, not on every keystroke |
+
+---
+
+## Phase 5: Integration & Polish
+
+**Status:** `pending`
+
+| Test file | Journey | What it verifies |
+|-----------|---------|-----------------|
+| `integration/full-journey.spec.ts` | Complete user journey | Register → edit profile → follow user → compose post → like post → receive notification → search → logout |
+| `integration/block-filtering.spec.ts` | Block filters across modules | Block user → their posts gone from feed, search, notifications |
+| `integration/mobile-responsive.spec.ts` | Mobile full flow | Complete user journey on mobile viewport — drawer nav, responsive cards |
+
+---
+
+## How to maintain this plan
+
+1. **When starting a phase with frontend work**, check the test file column — create those test files as part of the module implementation.
+2. **Mark the phase status as `complete`** once all listed tests pass.
+3. **Add new rows** if you discover user journeys not covered here.
+4. **Never remove a passing test** — tests accumulate across phases.
+5. **All e2e tests must pass before opening a PR** — add `make web-test-e2e` to the pre-PR checklist.
