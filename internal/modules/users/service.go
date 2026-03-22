@@ -203,19 +203,8 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (*RefreshRes
 		return nil, nil, err
 	}
 
-	err = s.db.WithTx(ctx, func(tx *sqlx.Tx) error {
-		if _, txErr := tx.ExecContext(ctx, "DELETE FROM users.sessions WHERE id = $1", oldSession.ID); txErr != nil {
-			return fmt.Errorf("service: refresh: delete old session: %w", txErr)
-		}
-		if _, txErr := tx.NamedExecContext(ctx,
-			`INSERT INTO users.sessions (id, user_id, refresh_token_hash, expires_at, created_at)
-			 VALUES (:id, :user_id, :refresh_token_hash, :expires_at, :created_at)`, newSession); txErr != nil {
-			return fmt.Errorf("service: refresh: create new session: %w", txErr)
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, nil, err
+	if err := s.store.RotateSession(ctx, oldSession.ID, newSession); err != nil {
+		return nil, nil, fmt.Errorf("service: refresh: rotate session: %w", err)
 	}
 
 	profile, err := s.store.GetProfileByID(ctx, oldSession.UserID)

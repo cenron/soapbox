@@ -1,4 +1,4 @@
-.PHONY: build run test lint swagger web-generate-api docker-up docker-down web-install web-dev web-build web-test web-test-e2e web-lint
+.PHONY: build run test lint swagger web-generate-api docker-up docker-down web-install web-dev web-build web-test web-test-e2e web-lint ensure-dist
 
 build: web-build swagger
 	go build -o bin/web ./cmd/web

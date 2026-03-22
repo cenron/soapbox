@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
@@ -146,6 +147,23 @@ func (s *Store) DeleteSession(ctx context.Context, id types.ID) error {
 		return fmt.Errorf("store: delete session: %w", err)
 	}
 	return nil
+}
+
+// RotateSession atomically deletes the old session and creates a new one.
+func (s *Store) RotateSession(ctx context.Context, oldID types.ID, newSession *Session) error {
+	return s.db.WithTx(ctx, func(tx *sqlx.Tx) error {
+		if _, err := tx.ExecContext(ctx, "DELETE FROM users.sessions WHERE id = $1", oldID); err != nil {
+			return fmt.Errorf("store: rotate session: delete old: %w", err)
+		}
+
+		const q = `INSERT INTO users.sessions (id, user_id, refresh_token_hash, expires_at, created_at)
+		           VALUES (:id, :user_id, :refresh_token_hash, :expires_at, :created_at)`
+		if _, err := tx.NamedExecContext(ctx, q, newSession); err != nil {
+			return fmt.Errorf("store: rotate session: create new: %w", err)
+		}
+
+		return nil
+	})
 }
 
 func (s *Store) DeleteSessionsByUserID(ctx context.Context, userID types.ID) error {
@@ -392,6 +410,14 @@ func (s *Store) GetFollowingIDs(ctx context.Context, userID types.ID) ([]types.I
 }
 
 // validateTimestampCursor checks that a cursor string is either empty or a valid RFC3339 timestamp.
+// escapeILIKE escapes ILIKE wildcard characters in user input.
+func escapeILIKE(s string) string {
+	s = strings.ReplaceAll(s, `\`, `\\`)
+	s = strings.ReplaceAll(s, `%`, `\%`)
+	s = strings.ReplaceAll(s, `_`, `\_`)
+	return s
+}
+
 func validateTimestampCursor(cursor string) error {
 	if cursor == "" {
 		return nil
@@ -413,7 +439,7 @@ func (s *Store) SearchUsers(ctx context.Context, query string, params types.Curs
 		ORDER BY username ASC
 		LIMIT $3`
 
-	pattern := "%" + query + "%"
+	pattern := "%" + escapeILIKE(query) + "%"
 	limit := params.Limit + 1
 	rows := make([]Profile, 0, limit)
 

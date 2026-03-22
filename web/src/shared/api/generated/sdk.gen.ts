@@ -37,7 +37,11 @@ export const postAuthLogin = <ThrowOnError extends boolean = false>(options: Opt
  *
  * Invalidate all sessions for the authenticated user and clear the refresh token cookie.
  */
-export const postAuthLogout = <ThrowOnError extends boolean = false>(options?: Options<PostAuthLogoutData, ThrowOnError>) => (options?.client ?? client).post<PostAuthLogoutResponses, PostAuthLogoutErrors, ThrowOnError>({ url: '/auth/logout', ...options });
+export const postAuthLogout = <ThrowOnError extends boolean = false>(options?: Options<PostAuthLogoutData, ThrowOnError>) => (options?.client ?? client).post<PostAuthLogoutResponses, PostAuthLogoutErrors, ThrowOnError>({
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/auth/logout',
+    ...options
+});
 
 /**
  * Refresh access token
@@ -66,6 +70,7 @@ export const postAuthRegister = <ThrowOnError extends boolean = false>(options: 
  * Update display name, bio, or avatar URL for the authenticated user.
  */
 export const putUsersMe = <ThrowOnError extends boolean = false>(options: Options<PutUsersMeData, ThrowOnError>) => (options.client ?? client).put<PutUsersMeResponses, PutUsersMeErrors, ThrowOnError>({
+    security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/users/me',
     ...options,
     headers: {
@@ -93,14 +98,22 @@ export const getUsersByUsername = <ThrowOnError extends boolean = false>(options
  *
  * Remove a follow relationship with the user identified by username. Requires authentication.
  */
-export const deleteUsersByUsernameFollow = <ThrowOnError extends boolean = false>(options: Options<DeleteUsersByUsernameFollowData, ThrowOnError>) => (options.client ?? client).delete<DeleteUsersByUsernameFollowResponses, DeleteUsersByUsernameFollowErrors, ThrowOnError>({ url: '/users/{username}/follow', ...options });
+export const deleteUsersByUsernameFollow = <ThrowOnError extends boolean = false>(options: Options<DeleteUsersByUsernameFollowData, ThrowOnError>) => (options.client ?? client).delete<DeleteUsersByUsernameFollowResponses, DeleteUsersByUsernameFollowErrors, ThrowOnError>({
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/users/{username}/follow',
+    ...options
+});
 
 /**
  * Follow a user
  *
  * Follow the user identified by username. Requires authentication.
  */
-export const postUsersByUsernameFollow = <ThrowOnError extends boolean = false>(options: Options<PostUsersByUsernameFollowData, ThrowOnError>) => (options.client ?? client).post<PostUsersByUsernameFollowResponses, PostUsersByUsernameFollowErrors, ThrowOnError>({ url: '/users/{username}/follow', ...options });
+export const postUsersByUsernameFollow = <ThrowOnError extends boolean = false>(options: Options<PostUsersByUsernameFollowData, ThrowOnError>) => (options.client ?? client).post<PostUsersByUsernameFollowResponses, PostUsersByUsernameFollowErrors, ThrowOnError>({
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/users/{username}/follow',
+    ...options
+});
 
 /**
  * List followers

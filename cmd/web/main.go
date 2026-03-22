@@ -38,6 +38,10 @@ import (
 // @accept          json
 // @produce         json
 
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+
 func main() {
 	ctx := context.Background()
 
