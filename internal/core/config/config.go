@@ -1,7 +1,9 @@
 package config
 
 import (
+	"fmt"
 	"strconv"
+	"time"
 
 	env "github.com/caarlos0/env/v11"
 )
@@ -11,6 +13,7 @@ type Config struct {
 	Database DatabaseConfig
 	S3       S3Config
 	Mail     MailConfig
+	JWT      JWTConfig
 }
 
 type ServerConfig struct {
@@ -52,10 +55,28 @@ type MailConfig struct {
 	From string `env:"MAIL_FROM" envDefault:"noreply@soapbox.dev"`
 }
 
+type JWTConfig struct {
+	Secret     string        `env:"JWT_SECRET"      envDefault:"dev-secret-change-in-production"`
+	AccessTTL  time.Duration `env:"JWT_ACCESS_TTL"  envDefault:"15m"`
+	RefreshTTL time.Duration `env:"JWT_REFRESH_TTL" envDefault:"168h"`
+}
+
 func Load() (*Config, error) {
 	cfg := &Config{}
 	if err := env.Parse(cfg); err != nil {
 		return nil, err
 	}
+
+	if err := cfg.Validate(); err != nil {
+		return nil, err
+	}
+
 	return cfg, nil
+}
+
+func (c *Config) Validate() error {
+	if c.Server.IsProd() && c.JWT.Secret == "dev-secret-change-in-production" {
+		return fmt.Errorf("config: JWT_SECRET must be changed from default in production")
+	}
+	return nil
 }
