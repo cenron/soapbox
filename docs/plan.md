@@ -86,7 +86,7 @@ This document is the single source of truth for what to build, in what order, an
 - [ ] Login endpoint (JWT access token + refresh token in httpOnly cookie)
 - [ ] Refresh endpoint (token rotation)
 - [ ] Logout endpoint (session invalidation)
-- [ ] OAuth flow (Google, GitHub, Apple)
+- [ ] ~~OAuth flow (Google, GitHub, Apple)~~ — deferred to post-MVP
 - [ ] JWT middleware (validate token, inject user context with role and verified status)
 - [ ] Role-based middleware (moderator and admin route protection, hierarchy check)
 
@@ -104,7 +104,7 @@ This document is the single source of truth for what to build, in what order, an
 **Frontend:**
 - [ ] Login page
 - [ ] Registration page
-- [ ] OAuth buttons
+- [ ] ~~OAuth buttons~~ — deferred to post-MVP
 - [ ] Auth state integration with app shell (logged in/out states, nav updates)
 - [ ] Protected route wrapper using auth context
 - [ ] Profile page (user info, posts tab, likes tab, followers/following lists)
@@ -113,7 +113,7 @@ This document is the single source of truth for what to build, in what order, an
 - [ ] User card component (reusable: search results, follower lists)
 - [ ] Frontend tests
 
-**Status:** `in progress` (backend auth + profiles + follows complete; frontend + OAuth + tests remaining)
+**Status:** `in progress` (backend complete; frontend + tests remaining; OAuth deferred to post-MVP)
 **Owner:** Claude
 **Branch:** `feat/users`
 
