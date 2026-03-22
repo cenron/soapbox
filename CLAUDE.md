@@ -16,7 +16,7 @@ This is a collaborative project with strict module dependencies. Violating the b
 
 2. **NEVER start a module whose dependencies are not marked `complete`.** If the plan says module X depends on module Y, and Y is not `complete`, you CANNOT work on X. Period. Do not ask "can I just start the parts that don't need Y?" No. Do not ask "can I stub it out?" No. Do not rationalize your way around this. The answer is no.
 
-3. **NEVER modify another module's code.** You are working on auth? Do not touch `internal/users/`. You are working on feed? Do not touch `internal/posts/`. Each module is owned by whoever is building it. If you need something from another module, it must already be exposed via the bus. If it isn't, you cannot work on this module yet.
+3. **NEVER modify another module's code.** You are working on auth? Do not touch `internal/modules/users/`. You are working on feed? Do not touch `internal/modules/posts/`. Each module is owned by whoever is building it. If you need something from another module, it must already be exposed via the bus. If it isn't, you cannot work on this module yet.
 
 4. **NEVER modify another module's event contracts.** The publisher owns the event schema. If you are consuming `posts.created` and it doesn't have a field you need, you do NOT add it. You stop and tell the user: "This module depends on a field that doesn't exist in the event contract. The posts module owner needs to add it."
 
@@ -59,8 +59,8 @@ A pre-2022 Twitter clone — chronological microblogging platform. Built as a mo
 
 Modules are isolated. This is the foundational architectural principle of this project. Every violation creates a hidden coupling that will break when modules are split into separate services.
 
-- **`internal/<module>/` directories are sovereign territory.** Only the developer actively building that module may modify files in its directory.
-- **No cross-module imports.** If you find yourself writing `import "soapbox/internal/posts"` from inside `internal/feed/`, STOP. You are violating the boundary. Use the bus.
+- **`internal/modules/<module>/` directories are sovereign territory.** Only the developer actively building that module may modify files in its directory.
+- **No cross-module imports.** If you find yourself writing `import "soapbox/internal/modules/posts"` from inside `internal/modules/feed/`, STOP. You are violating the boundary. Use the bus.
 - **No cross-schema queries.** If you find yourself writing a SQL query that joins across schemas (e.g., `posts.posts JOIN users.profiles`), STOP. You are violating the boundary. Use the bus.
 - **`internal/core/` is the only shared code.** If two modules need the same utility, it goes in core. But core NEVER contains business logic — only infrastructure (bus, db, http, cache, registry, types).
 
@@ -147,13 +147,14 @@ soapbox/
 │   │   ├── db/                  # sqlx connection, migrations, transactions
 │   │   ├── httpkit/             # Response helpers, middleware, pagination
 │   │   └── types/               # Common types (IDs, timestamps)
-│   ├── auth/                    # Auth module (credentials, sessions, roles, OAuth)
-│   ├── users/                   # Users module (profiles, follows)
-│   ├── posts/                   # Posts module (posts, likes, reposts, hashtags, link previews)
-│   ├── feed/                    # Feed module (timeline assembly)
-│   ├── notifications/           # Notifications module
-│   ├── media/                   # Media module (S3 uploads)
-│   └── moderation/              # Moderation module (reports, blocks, mutes, admin)
+│   └── modules/                 # Feature modules (isolated, communicate via bus)
+│       ├── auth/                # Auth module (credentials, sessions, roles, OAuth)
+│       ├── users/               # Users module (profiles, follows)
+│       ├── posts/               # Posts module (posts, likes, reposts, hashtags, link previews)
+│       ├── feed/                # Feed module (timeline assembly)
+│       ├── notifications/       # Notifications module
+│       ├── media/               # Media module (S3 uploads)
+│       └── moderation/          # Moderation module (reports, blocks, mutes, admin)
 ├── web/                         # React SPA (Vite + shadcn/ui + Tailwind)
 ├── build/
 │   ├── Dockerfile               # Single image, all binaries
@@ -220,19 +221,20 @@ Don't just run the steps — prove it works. Ask: "Would a staff engineer approv
 4. **Module boundary audit** — grep the entire module directory for imports of other `internal/` modules. If any exist, fix them before proceeding.
    ```bash
    # Backend: check for cross-module imports
-   grep -r "soapbox/internal/" internal/<your-module>/ | grep -v "soapbox/internal/core/"
+   grep -r "soapbox/internal/" internal/modules/<your-module>/ | grep -v "soapbox/internal/core/"
    # Frontend: check for cross-module imports
    grep -r "from.*modules/" web/src/modules/<your-module>/ | grep -v "from.*shared/"
    ```
 5. **Schema boundary audit** — grep for SQL joins across schemas.
    ```bash
-   grep -rni "JOIN.*\." internal/<your-module>/ | grep -v "<your-schema>\."
+   grep -rni "JOIN.*\." internal/modules/<your-module>/ | grep -v "<your-schema>\."
    ```
 6. **Naming consistency** — scan all new/modified files for mixed naming conventions (camelCase vs snake_case, inconsistent variable names, different patterns for the same concept).
 7. **Dead code check** — no unused imports, no commented-out code, no orphaned functions.
 8. **Pattern consistency** — compare your module's patterns against existing completed modules. Error handling, response formatting, test structure, and file organization must match.
 9. **Design spec compliance** — verify your module implements all endpoints, events, and queries listed in `docs/specs/2026-03-21-soapbox-design.md` for this module. Nothing missing, nothing extra.
 10. **Plan status update** — update `docs/plan.md` to mark this module as `complete`.
+11. **E2E tests** — if this module includes frontend changes, check `docs/e2e-test-plan.md` for the corresponding phase. Write and pass ALL listed e2e tests before opening the PR. Run `make web-test-e2e` to verify. Mark the phase status as `complete` in the test plan.
 
 If any check fails, fix the issue and re-run ALL checks. Only create the PR when everything passes clean.
 

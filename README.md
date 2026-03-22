@@ -8,7 +8,7 @@ Built as a Go modular monolith with a React SPA frontend. Designed to scale into
 
 - [Go 1.23+](https://go.dev/dl/)
 - [Docker](https://docs.docker.com/get-docker/) (for Postgres, MinIO, Mailpit)
-- [Node.js 20+](https://nodejs.org/) (for the frontend, coming in Phase 0B)
+- [Node.js 20+](https://nodejs.org/) (for the frontend)
 
 ## Setup
 
@@ -25,31 +25,44 @@ go install github.com/air-verse/air@latest
 go install github.com/swaggo/swag/cmd/swag@latest
 go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
+# Install frontend dependencies
+cd web && npm install && cd ..
+
 # Start dev infrastructure (Postgres, MinIO, Mailpit)
 make docker-up
 
-# Run the server (hot-reload via air)
+# Run the backend (hot-reload via air)
 make run
+
+# In a separate terminal, run the frontend dev server
+make web-dev
 ```
 
-The server starts at `http://localhost:8080`.
+The backend starts at `http://localhost:8080`. The frontend dev server starts at `http://localhost:5173` and proxies API requests to the backend.
 
 ## Make targets
 
 | Command | Description |
 |---------|-------------|
-| `make run` | Start dev server with hot-reload (air) |
-| `make build` | Build the binary to `bin/web` |
-| `make test` | Run all tests |
-| `make lint` | Run golangci-lint |
+| `make run` | Start backend dev server with hot-reload (air) |
+| `make build` | Build frontend + Go binary to `bin/web` |
+| `make test` | Run all tests (frontend + backend) |
+| `make lint` | Run all linters (ESLint + golangci-lint) |
 | `make swagger` | Regenerate Swagger docs |
 | `make docker-up` | Start Postgres, MinIO, Mailpit |
 | `make docker-down` | Stop dev infrastructure |
+| `make web-install` | Install frontend dependencies |
+| `make web-dev` | Start Vite dev server (port 5173) |
+| `make web-build` | Build frontend to `web/dist/` |
+| `make web-test` | Run frontend unit tests (Vitest) |
+| `make web-test-e2e` | Run e2e tests (Playwright, chromium/firefox/webkit) |
+| `make web-lint` | Run frontend linter (ESLint) |
 
 ## Dev services
 
 | Service | URL | Purpose |
 |---------|-----|---------|
+| Frontend (dev) | http://localhost:5173 | Vite dev server with HMR |
 | API | http://localhost:8080 | Go backend |
 | Swagger UI | http://localhost:8080/swagger/index.html | API documentation |
 | Health check | http://localhost:8080/healthz | Liveness probe |
@@ -71,14 +84,21 @@ soapbox/
 │   │   ├── registry/            # Service discovery
 │   │   ├── testutil/            # Test helpers and mocks
 │   │   └── types/               # IDs, pagination, errors
-│   ├── auth/                    # Auth module
-│   ├── users/                   # User profiles and follows
-│   ├── posts/                   # Posts, likes, reposts, hashtags
-│   ├── feed/                    # Timeline assembly
-│   ├── notifications/           # In-app notifications
-│   ├── media/                   # S3 uploads
-│   └── moderation/              # Reports, blocks, mutes
+│   └── modules/                 # Feature modules (isolated, communicate via bus)
+│       ├── auth/                # Auth module
+│       ├── users/               # User profiles and follows
+│       ├── posts/               # Posts, likes, reposts, hashtags
+│       ├── feed/                # Timeline assembly
+│       ├── notifications/       # In-app notifications
+│       ├── media/               # S3 uploads
+│       └── moderation/          # Reports, blocks, mutes
 ├── web/                         # React SPA (Vite + shadcn/ui + Tailwind)
+│   ├── src/
+│   │   ├── shared/              # API client, auth context, WebSocket, UI components
+│   │   ├── layouts/             # App shell (nav bar, sidebar)
+│   │   ├── pages/               # Route pages
+│   │   └── modules/             # Feature-specific frontend code
+│   └── embed.go                 # go:embed for production SPA serving
 ├── api/swagger/                 # Generated Swagger docs
 ├── build/                       # Dockerfile + entrypoint
 ├── docker-compose.yml           # Dev infra
@@ -91,12 +111,32 @@ Modules are fully isolated — no cross-module imports. All inter-module communi
 
 See `docs/specs/2026-03-21-soapbox-design.md` for the full design specification.
 
+## Frontend
+
+The frontend is a React SPA in `web/`, built with Vite and embedded into the Go binary for production.
+
+**Stack:** React 19, TypeScript, Tailwind CSS v4, shadcn/ui, React Router v7, TanStack Query v5
+
+**Development:** `make web-dev` runs the Vite dev server with HMR. API calls (`/api`, `/ws`, `/swagger`, `/healthz`) are proxied to the Go backend at `:8080`.
+
+**Production:** `make build` compiles the frontend into `web/dist/`, then embeds it into the Go binary via `go:embed`. The Go server serves the SPA and falls back to `index.html` for client-side routing.
+
+**Unit tests:** Vitest + React Testing Library. Run with `make web-test`.
+
+**E2E tests:** Playwright (chromium, firefox, webkit). Run with `make web-test-e2e`. See `docs/e2e-test-plan.md` for the phased user journey test plan.
+
+**Adding UI components:** `cd web && npx shadcn@latest add <component>` — components land in `src/shared/ui/`.
+
 ## Tech stack
 
 | Layer | Technology |
 |-------|-----------|
 | Backend | Go, chi, sqlx, pgx, goose |
-| Frontend | React, Vite, shadcn/ui, Tailwind CSS |
+| Frontend | React 19, Vite, TypeScript, shadcn/ui, Tailwind CSS v4 |
+| Routing | React Router v7 (declarative mode) |
+| Server state | TanStack Query v5 |
+| Unit testing | Vitest, React Testing Library (frontend); Go test (backend) |
+| E2E testing | Playwright (chromium, firefox, webkit) |
 | Database | PostgreSQL 16 (schema-per-module) |
 | Object storage | S3-compatible (MinIO for dev) |
 | Dev email | Mailpit |

@@ -67,7 +67,7 @@ This document is the single source of truth for what to build, in what order, an
 - [ ] Go `embed` integration: serve SPA from Go binary
 - [ ] Proxy config for dev (Vite dev server → Go API)
 
-**Status:** `pending`
+**Status:** `complete`
 **Owner:** —
 **Branch:** `phase/bootstrap`
 

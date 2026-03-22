@@ -85,7 +85,7 @@ Present the full assessment to the user before making any changes:
 ## PR #12 Comment Review
 
 ### Will fix (3):
-1. 🔴 @reviewer: "This imports internal/users from inside internal/posts" (handler.go:5) → remove cross-module import, use bus query instead
+1. 🔴 @reviewer: "This imports internal/modules/users from inside internal/modules/posts" (handler.go:5) → remove cross-module import, use bus query instead
 2. 🟡 @copilot: "Missing error handling on bus.Query" (service.go:42) → add error check + test
 3. 🟢 @reviewer: "Inconsistent naming: userID vs userId" (types.go:10) → standardize to userID
 
