@@ -20,7 +20,7 @@ All e2e tests live in `web/e2e/`. Run with `make web-test-e2e` or `cd web && npm
 
 ## Phase 1: Auth Module
 
-**Status:** `pending`
+**Status:** `complete` (OAuth and session-refresh tests deferred to post-MVP)
 
 | Test file | Journey | What it verifies |
 |-----------|---------|-----------------|
@@ -35,7 +35,7 @@ All e2e tests live in `web/e2e/`. Run with `make web-test-e2e` or `cd web && npm
 
 ## Phase 1: Users Module
 
-**Status:** `pending`
+**Status:** `complete`
 
 | Test file | Journey | What it verifies |
 |-----------|---------|-----------------|

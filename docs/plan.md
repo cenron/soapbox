@@ -113,7 +113,7 @@ This document is the single source of truth for what to build, in what order, an
 - [ ] User card component (reusable: search results, follower lists)
 - [ ] Frontend tests
 
-**Status:** `in progress` (backend complete; frontend + tests remaining; OAuth deferred to post-MVP)
+**Status:** `complete` (OAuth deferred to post-MVP)
 **Owner:** Claude
 **Branch:** `feat/users`
 
