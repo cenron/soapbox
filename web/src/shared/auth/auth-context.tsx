@@ -111,6 +111,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [user, isLoading],
   )
 
+  if (isLoading) return null
+
   return <AuthContext value={value}>{children}</AuthContext>
 }
 

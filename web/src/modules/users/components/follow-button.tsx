@@ -51,7 +51,7 @@ export function FollowButton({ username, isFollowing, onToggle }: FollowButtonPr
     onError: handleError,
   })
 
-  if (user?.username === username) return null
+  if (!user || user.username === username) return null
 
   const isPending = followMutation.isPending || unfollowMutation.isPending
 

@@ -40,8 +40,8 @@ export function ProfilePage() {
   }
 
   if (profileQuery.isError) {
-    const status = (profileQuery.error as { status?: number })?.status
-    const isNotFound = status === 404
+    const errorMessage = (profileQuery.error as { message?: string })?.message
+    const isNotFound = errorMessage === "not found"
 
     return (
       <div className="p-6">
