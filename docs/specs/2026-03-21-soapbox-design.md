@@ -21,7 +21,8 @@ A Twitter clone with pre-2022 feel. Chronological feed, no algorithmic manipulat
 - **User profiles:** username, display name, bio, avatar
 - **Search:** posts, users, hashtags
 - **Moderation:** block, mute, report (manual review)
-- **Auth:** email+password + OAuth (Google, GitHub, Apple)
+- **Auth:** email+password + OAuth (Google, GitHub, Apple), role-based access (SYSTEM admin role, hardcoded, not modifiable via API)
+- **Admin UI:** role-gated within the SPA — admin users see inline controls (ban, block from feed) plus a dedicated admin section for reviewing reports
 - **Mobile-first responsive web UI**
 
 ## Post-MVP features
@@ -225,6 +226,9 @@ Single Postgres instance. Each module owns its own schema. No cross-schema forei
 | `auth.credentials` | id, user_id, email, password_hash, created_at |
 | `auth.oauth_links` | id, user_id, provider, provider_id, created_at |
 | `auth.sessions` | id, user_id, refresh_token, expires_at, created_at |
+| `auth.roles` | id, user_id, role, created_at |
+
+The SYSTEM admin role is seeded at database initialization and cannot be created, modified, or deleted through the API. The JWT payload includes the user's role for frontend and backend authorization checks.
 
 ### users schema
 
@@ -237,7 +241,7 @@ Single Postgres instance. Each module owns its own schema. No cross-schema forei
 
 | Table | Columns |
 |-------|---------|
-| `posts.posts` | id, author_id, body, parent_id, repost_of_id, created_at |
+| `posts.posts` | id, author_id, author_username, author_display_name, author_avatar_url, body, parent_id, repost_of_id, created_at |
 | `posts.media` | id, post_id, media_url, media_type, position |
 | `posts.link_previews` | id, post_id, url, title, description, image_url |
 | `posts.hashtags` | post_id, tag |
@@ -279,13 +283,16 @@ Single Postgres instance. Each module owns its own schema. No cross-schema forei
 ### users
 
 - **Subscribes:** `auth.user_registered` → creates default profile
-- **Publishes:** `users.followed`, `users.unfollowed`
+- **Publishes:** `users.followed`, `users.unfollowed`, `users.profile_updated`
 - **Queries exposed:** `users.GetProfile`, `users.GetProfiles`, `users.GetFollowing`
 
 ### posts
 
+- **Subscribes:** `users.profile_updated` → updates denormalized author data (username, display name, avatar) across all posts by that user
 - **Publishes:** `posts.created`, `posts.liked`, `posts.reposted`, `posts.deleted`
 - **Queries exposed:** `posts.GetByIDs`, `posts.GetByAuthor`, `posts.GetThread`
+
+**Denormalization:** Posts store a snapshot of author data (username, display_name, avatar_url) at creation time. This eliminates cross-module queries when rendering feeds. Author data is kept in sync via the `users.profile_updated` event.
 
 ### feed
 
@@ -310,10 +317,11 @@ Single Postgres instance. Each module owns its own schema. No cross-schema forei
 
 ### search
 
-Search is not a separate module. Each module handles search for its own data:
+Search is a thin orchestration module that owns the `/search` endpoint. It fans out queries to posts and users modules via the bus, aggregates results, and returns them. It owns no data itself. Each module handles search for its own domain:
 - Posts module: full-text search on post body, hashtag matching
 - Users module: search by username and display name
-- The `/search` API endpoint routes to the appropriate module based on the `type` parameter
+
+The search interface is abstract enough to swap Postgres full-text for OpenSearch later without changing the data-owning modules.
 
 ## API design
 
@@ -383,6 +391,17 @@ REST API under `/api/v1/`. All responses are JSON. Auth via JWT in the `Authoriz
 | POST | `/users/:username/mute` | Mute user |
 | DELETE | `/users/:username/mute` | Unmute user |
 
+### admin (requires SYSTEM role)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/admin/reports` | List pending reports (paginated) |
+| PUT | `/admin/reports/:id` | Resolve report (dismiss, warn, ban) |
+| POST | `/admin/users/:username/ban` | Ban user |
+| DELETE | `/admin/users/:username/ban` | Unban user |
+| POST | `/admin/users/:username/suspend` | Temporarily suspend user |
+| DELETE | `/admin/posts/:id` | Admin delete any post |
+
 ### search
 
 | Method | Endpoint | Description |
@@ -435,6 +454,7 @@ The SPA is a fully independent Vite build that only communicates via `/api/v1/*`
 - **Search results** — posts, users, hashtags tabs
 - **Notifications** — activity feed
 - **Settings** — profile edit, account management, blocked/muted users
+- **Admin** — report review queue, user management (ban, suspend), content moderation actions. Only visible to users with SYSTEM admin role.
 - **Auth** — login, register, OAuth
 
 ### WebSocket
@@ -471,6 +491,35 @@ services:
       - "1025:1025"  # SMTP
       - "8025:8025"  # Web UI
 ```
+
+## Collaborative development workflow
+
+Soapbox is built collaboratively by two developers, each using Claude Code.
+
+### Module ownership rules
+
+- **Modules never import each other.** All communication goes through the bus (events or queries).
+- **Publisher owns the event contract.** The module that publishes an event defines its schema. Consumers subscribe to it as-is.
+- **No cross-module code changes.** When working on a module, you must not modify another module's code. If you need something from another module, it must be exposed via the bus.
+
+### Build order
+
+The phased plan encodes module dependencies explicitly. A module cannot be started until all modules it depends on (subscribes to or queries from) are marked complete. Claude Code must check the plan document before starting any module work. If the only available modules depend on one currently in progress by the other developer, the blocked developer works on bug fixes, tests, or technical debt cleanup.
+
+### Coordination
+
+- The plan document (`docs/plan.md`) is the single source of truth for module status.
+- When a module's phases are complete, Claude marks it as complete in the plan doc before pushing the branch.
+- Module status merges with the code — no separate tracking step.
+- Developers communicate module ownership through Discord (future: Jira board).
+- Merge conflicts on the plan doc are resolved like any code conflict.
+
+### Code review process
+
+- Each module is developed on its own feature branch.
+- Branch is pushed and a PR is opened for review before merging to main.
+- Reviews focus on: consistency with design principles, module boundary violations, event contract correctness.
+- Either developer or Copilot review can review. The author's Claude Code session pulls PR comments, evaluates them, fixes if warranted, and resolves.
 
 ## Future concerns (documented, not solved)
 
