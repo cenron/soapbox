@@ -44,7 +44,9 @@ func Recoverer(logger *slog.Logger) func(http.Handler) http.Handler {
 			defer func() {
 				if rec := recover(); rec != nil {
 					logger.Error("panic recovered", "panic", rec, "path", r.URL.Path)
-					http.Error(w, "internal server error", http.StatusInternalServerError)
+					JSON(w, http.StatusInternalServerError, map[string]string{
+						"message": "internal server error",
+					})
 				}
 			}()
 

@@ -27,7 +27,9 @@ func NewMockBus() *MockBus {
 func (b *MockBus) Publish(topic string, event any) error {
 	b.mu.Lock()
 	b.published = append(b.published, PublishedEvent{Topic: topic, Event: event})
-	handlers := b.subscribers[topic]
+	original := b.subscribers[topic]
+	handlers := make([]func(event any), len(original))
+	copy(handlers, original)
 	b.mu.Unlock()
 
 	for _, h := range handlers {

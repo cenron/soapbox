@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/radni/soapbox/internal/core/config"
@@ -28,8 +29,12 @@ func NewServer(cfg config.ServerConfig, logger *slog.Logger) *Server {
 		Router: r,
 		logger: logger,
 		srv: &http.Server{
-			Addr:    fmt.Sprintf("%s:%d", cfg.Host, cfg.Port),
-			Handler: r,
+			Addr:              fmt.Sprintf("%s:%d", cfg.Host, cfg.Port),
+			Handler:           r,
+			ReadHeaderTimeout: 10 * time.Second,
+			ReadTimeout:       30 * time.Second,
+			WriteTimeout:      30 * time.Second,
+			IdleTimeout:       120 * time.Second,
 		},
 	}
 

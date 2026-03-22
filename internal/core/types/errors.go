@@ -20,23 +20,43 @@ func (e *AppError) Error() string {
 }
 
 var (
-	ErrNotFound     = &AppError{Code: http.StatusNotFound, Message: "not found"}
-	ErrUnauthorized = &AppError{Code: http.StatusUnauthorized, Message: "unauthorized"}
-	ErrForbidden    = &AppError{Code: http.StatusForbidden, Message: "forbidden"}
-	ErrConflict     = &AppError{Code: http.StatusConflict, Message: "conflict"}
-	ErrValidation   = &AppError{Code: http.StatusUnprocessableEntity, Message: "validation error"}
+	errNotFound     = errors.New("not found")
+	errUnauthorized = errors.New("unauthorized")
+	errForbidden    = errors.New("forbidden")
+	errConflict     = errors.New("conflict")
+	errValidation   = errors.New("validation error")
 )
 
+func ErrNotFound() *AppError {
+	return &AppError{Code: http.StatusNotFound, Message: errNotFound.Error()}
+}
+
+func ErrUnauthorized() *AppError {
+	return &AppError{Code: http.StatusUnauthorized, Message: errUnauthorized.Error()}
+}
+
+func ErrForbidden() *AppError {
+	return &AppError{Code: http.StatusForbidden, Message: errForbidden.Error()}
+}
+
+func ErrConflict() *AppError {
+	return &AppError{Code: http.StatusConflict, Message: errConflict.Error()}
+}
+
+func ErrValidation() *AppError {
+	return &AppError{Code: http.StatusUnprocessableEntity, Message: errValidation.Error()}
+}
+
 func NewNotFound(detail string) *AppError {
-	return &AppError{Code: http.StatusNotFound, Message: "not found", Detail: detail}
+	return &AppError{Code: http.StatusNotFound, Message: errNotFound.Error(), Detail: detail}
 }
 
 func NewValidation(detail string) *AppError {
-	return &AppError{Code: http.StatusUnprocessableEntity, Message: "validation error", Detail: detail}
+	return &AppError{Code: http.StatusUnprocessableEntity, Message: errValidation.Error(), Detail: detail}
 }
 
 func NewConflict(detail string) *AppError {
-	return &AppError{Code: http.StatusConflict, Message: "conflict", Detail: detail}
+	return &AppError{Code: http.StatusConflict, Message: errConflict.Error(), Detail: detail}
 }
 
 func IsAppError(err error) (*AppError, bool) {

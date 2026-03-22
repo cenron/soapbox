@@ -14,13 +14,32 @@ func newTestBus() Bus {
 	return NewMemoryBus(slog.Default())
 }
 
+func waitFor(t *testing.T, wg *sync.WaitGroup) {
+	t.Helper()
+
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("timed out waiting for handlers")
+	}
+}
+
 func TestPublish_DispatchesToSubscribers(t *testing.T) {
 	b := newTestBus()
 
+	var wg sync.WaitGroup
 	var mu sync.Mutex
 	var received []string
 
+	wg.Add(1)
 	err := b.Subscribe("test.topic", func(event any) {
+		defer wg.Done()
 		mu.Lock()
 		defer mu.Unlock()
 		received = append(received, event.(string))
@@ -30,7 +49,7 @@ func TestPublish_DispatchesToSubscribers(t *testing.T) {
 	err = b.Publish("test.topic", "hello")
 	require.NoError(t, err)
 
-	time.Sleep(50 * time.Millisecond)
+	waitFor(t, &wg)
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -40,11 +59,14 @@ func TestPublish_DispatchesToSubscribers(t *testing.T) {
 func TestPublish_MultipleSubscribers(t *testing.T) {
 	b := newTestBus()
 
+	var wg sync.WaitGroup
 	var mu sync.Mutex
 	count := 0
 
 	for range 3 {
+		wg.Add(1)
 		err := b.Subscribe("test.topic", func(_ any) {
+			defer wg.Done()
 			mu.Lock()
 			defer mu.Unlock()
 			count++
@@ -55,7 +77,7 @@ func TestPublish_MultipleSubscribers(t *testing.T) {
 	err := b.Publish("test.topic", "event")
 	require.NoError(t, err)
 
-	time.Sleep(50 * time.Millisecond)
+	waitFor(t, &wg)
 
 	mu.Lock()
 	defer mu.Unlock()

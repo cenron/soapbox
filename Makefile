@@ -11,7 +11,8 @@ test:
 	go test ./...
 
 lint:
-	$(shell go env GOPATH)/bin/golangci-lint run ./...
+	@test -x $$(go env GOPATH)/bin/golangci-lint || { echo "golangci-lint not found. Install it: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest"; exit 1; }
+	$$(go env GOPATH)/bin/golangci-lint run ./...
 
 swagger:
 	@test -x $$(go env GOPATH)/bin/swag || { echo "swag not found. Install it: go install github.com/swaggo/swag/cmd/swag@latest"; exit 1; }

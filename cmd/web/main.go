@@ -73,10 +73,10 @@ func main() {
 	// auth.Load(core.ModuleDeps{...})
 	// users.Load(core.ModuleDeps{...})
 
+	errCh := make(chan error, 1)
 	go func() {
 		if err := server.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			logger.Error("server error", "error", err)
-			os.Exit(1)
+			errCh <- err
 		}
 	}()
 
@@ -86,7 +86,12 @@ func main() {
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
+
+	select {
+	case err := <-errCh:
+		logger.Error("server error", "error", err)
+	case <-quit:
+	}
 
 	logger.Info("shutting down")
 

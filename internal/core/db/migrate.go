@@ -4,11 +4,18 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
+	"regexp"
 
 	"github.com/pressly/goose/v3"
 )
 
+var validSchema = regexp.MustCompile(`^[a-z_][a-z0-9_]*$`)
+
 func (db *DB) Migrate(ctx context.Context, schema string, migrations fs.FS) error {
+	if !validSchema.MatchString(schema) {
+		return fmt.Errorf("db: invalid schema name %q", schema)
+	}
+
 	sqlDB := db.Conn.DB
 
 	if _, err := sqlDB.ExecContext(ctx, fmt.Sprintf("CREATE SCHEMA IF NOT EXISTS %s", schema)); err != nil {

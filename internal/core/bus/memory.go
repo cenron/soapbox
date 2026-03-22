@@ -23,7 +23,9 @@ func NewMemoryBus(logger *slog.Logger) Bus {
 
 func (b *memoryBus) Publish(topic string, event any) error {
 	b.mu.RLock()
-	handlers := b.subs[topic]
+	original := b.subs[topic]
+	handlers := make([]func(event any), len(original))
+	copy(handlers, original)
 	b.mu.RUnlock()
 
 	for _, h := range handlers {
