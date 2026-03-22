@@ -6,9 +6,9 @@ Built as a Go modular monolith with a React SPA frontend. Designed to scale into
 
 ## Prerequisites
 
-- [Go 1.23+](https://go.dev/dl/)
+- [Go 1.26+](https://go.dev/dl/)
 - [Docker](https://docs.docker.com/get-docker/) (for Postgres, MinIO, Mailpit)
-- [Node.js 20+](https://nodejs.org/) (for the frontend)
+- [Node.js 22+](https://nodejs.org/) (for the frontend)
 
 ## Setup
 

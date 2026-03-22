@@ -47,11 +47,12 @@ func (b *MockBus) Subscribe(topic string, handler func(event any)) error {
 	return nil
 }
 
-func (b *MockBus) RegisterQuery(name string, handler func(req any) (any, error)) {
+func (b *MockBus) RegisterQuery(name string, handler func(req any) (any, error)) error {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
 	b.queryResponses[name] = handler
+	return nil
 }
 
 func (b *MockBus) Query(name string, req any) (any, error) {
@@ -60,7 +61,7 @@ func (b *MockBus) Query(name string, req any) (any, error) {
 	b.mu.Unlock()
 
 	if !exists {
-		return nil, fmt.Errorf("mock bus: query %q not registered", name)
+		return nil, fmt.Errorf("bus: query %q not registered", name)
 	}
 
 	return handler(req)

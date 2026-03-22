@@ -3,7 +3,11 @@
 build: web-build swagger
 	go build -o bin/web ./cmd/web
 
-run: swagger
+ensure-dist:
+	@mkdir -p web/dist
+	@test -f web/dist/index.html || echo '<!doctype html><html><body>Run make web-build</body></html>' > web/dist/index.html
+
+run: ensure-dist swagger
 	@test -x $$(go env GOPATH)/bin/air || { echo "air not found. Install it: go install github.com/air-verse/air@latest"; exit 1; }
 	$$(go env GOPATH)/bin/air
 

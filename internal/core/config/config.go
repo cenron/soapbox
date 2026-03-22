@@ -1,7 +1,7 @@
 package config
 
 import (
-	"fmt"
+	"strconv"
 
 	env "github.com/caarlos0/env/v11"
 )
@@ -34,7 +34,7 @@ type DatabaseConfig struct {
 
 func (c DatabaseConfig) DSN() string {
 	return "postgres://" + c.User + ":" + c.Password +
-		"@" + c.Host + ":" + itoa(c.Port) +
+		"@" + c.Host + ":" + strconv.Itoa(c.Port) +
 		"/" + c.Name + "?sslmode=" + c.SSLMode
 }
 
@@ -58,8 +58,4 @@ func Load() (*Config, error) {
 		return nil, err
 	}
 	return cfg, nil
-}
-
-func itoa(i int) string {
-	return fmt.Sprintf("%d", i)
 }

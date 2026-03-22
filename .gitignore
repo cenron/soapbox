@@ -29,9 +29,8 @@ go.work.sum
 node_modules/
 .next/
 
-# Frontend build output (keep .gitkeep for go:embed)
-web/dist/*
-!web/dist/.gitkeep
+# Frontend build output
+web/dist/
 *.tsbuildinfo
 npm-debug.log*
 yarn-debug.log*

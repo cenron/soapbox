@@ -3,12 +3,12 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io/fs"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -91,10 +91,10 @@ func main() {
 		}
 	}()
 
-	addr := cfg.Server.Host + ":" + itoa(cfg.Server.Port)
+	addr := cfg.Server.Host + ":" + strconv.Itoa(cfg.Server.Port)
 	logger.Info("soapbox started", "addr", addr)
-	logger.Info("swagger UI", "url", "http://localhost:"+itoa(cfg.Server.Port)+"/swagger/index.html")
-	logger.Info("web app", "url", "http://localhost:"+itoa(cfg.Server.Port))
+	logger.Info("swagger UI", "url", "http://localhost:"+strconv.Itoa(cfg.Server.Port)+"/swagger/index.html")
+	logger.Info("web app", "url", "http://localhost:"+strconv.Itoa(cfg.Server.Port))
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
@@ -136,8 +136,4 @@ func setupLogger(cfg config.ServerConfig) *slog.Logger {
 	slog.SetDefault(logger)
 
 	return logger
-}
-
-func itoa(i int) string {
-	return fmt.Sprintf("%d", i)
 }

@@ -50,15 +50,16 @@ func (b *memoryBus) Subscribe(topic string, handler func(event any)) error {
 	return nil
 }
 
-func (b *memoryBus) RegisterQuery(name string, handler func(req any) (any, error)) {
+func (b *memoryBus) RegisterQuery(name string, handler func(req any) (any, error)) error {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
 	if _, exists := b.queries[name]; exists {
-		panic(fmt.Sprintf("bus: query %q already registered", name))
+		return fmt.Errorf("bus: query %q already registered", name)
 	}
 
 	b.queries[name] = handler
+	return nil
 }
 
 func (b *memoryBus) Query(name string, req any) (any, error) {

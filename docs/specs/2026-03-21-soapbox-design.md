@@ -172,7 +172,7 @@ type Bus interface {
     Subscribe(topic string, handler func(event any)) error
 
     // Sync — request-response
-    RegisterQuery(name string, handler func(req any) (any, error))
+    RegisterQuery(name string, handler func(req any) (any, error)) error
     Query(name string, req any) (any, error)
 }
 ```

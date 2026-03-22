@@ -94,9 +94,10 @@ func TestPublish_NoSubscribers(t *testing.T) {
 func TestRegisterQuery_And_Query(t *testing.T) {
 	b := newTestBus()
 
-	b.RegisterQuery("test.query", func(req any) (any, error) {
+	err := b.RegisterQuery("test.query", func(req any) (any, error) {
 		return "response:" + req.(string), nil
 	})
+	require.NoError(t, err)
 
 	result, err := b.Query("test.query", "input")
 	require.NoError(t, err)
@@ -111,12 +112,13 @@ func TestQuery_Unregistered(t *testing.T) {
 	assert.Contains(t, err.Error(), "not registered")
 }
 
-func TestRegisterQuery_DuplicatePanics(t *testing.T) {
+func TestRegisterQuery_DuplicateReturnsError(t *testing.T) {
 	b := newTestBus()
 
-	b.RegisterQuery("test.query", func(_ any) (any, error) { return nil, nil })
+	err := b.RegisterQuery("test.query", func(_ any) (any, error) { return nil, nil })
+	require.NoError(t, err)
 
-	assert.Panics(t, func() {
-		b.RegisterQuery("test.query", func(_ any) (any, error) { return nil, nil })
-	})
+	err = b.RegisterQuery("test.query", func(_ any) (any, error) { return nil, nil })
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "already registered")
 }
