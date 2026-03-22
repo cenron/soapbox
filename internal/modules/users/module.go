@@ -7,9 +7,7 @@ import (
 	"github.com/radni/soapbox/internal/modules/users/migrations"
 )
 
-func Load(deps core.ModuleDeps) error {
-	ctx := context.Background()
-
+func Load(ctx context.Context, deps core.ModuleDeps) error {
 	if err := deps.DB.Migrate(ctx, "users", migrations.Files); err != nil {
 		return err
 	}

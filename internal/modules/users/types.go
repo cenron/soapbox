@@ -3,7 +3,15 @@ package users
 import (
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/radni/soapbox/internal/core/types"
+)
+
+// Role constants
+
+const (
+	RoleUser      = "user"
+	RoleModerator = "moderator"
+	RoleAdmin     = "admin"
 )
 
 // Request types
@@ -29,7 +37,7 @@ type UpdateProfileRequest struct {
 // Response types
 
 type ProfileResponse struct {
-	ID             uuid.UUID `json:"id"`
+	ID             types.ID  `json:"id"`
 	Username       string    `json:"username"`
 	DisplayName    string    `json:"display_name"`
 	Bio            string    `json:"bio"`
@@ -53,41 +61,43 @@ type RefreshResponse struct {
 // Event types
 
 type UserRegisteredEvent struct {
-	UserID   uuid.UUID `json:"user_id"`
-	Username string    `json:"username"`
-	Email    string    `json:"email"`
+	UserID   types.ID `json:"user_id"`
+	Username string   `json:"username"`
+	Email    string   `json:"email"`
 }
 
 type UserFollowedEvent struct {
-	FollowerID  uuid.UUID `json:"follower_id"`
-	FollowingID uuid.UUID `json:"following_id"`
+	FollowerID  types.ID `json:"follower_id"`
+	FollowingID types.ID `json:"following_id"`
 }
 
 type UserUnfollowedEvent struct {
-	FollowerID  uuid.UUID `json:"follower_id"`
-	FollowingID uuid.UUID `json:"following_id"`
+	FollowerID  types.ID `json:"follower_id"`
+	FollowingID types.ID `json:"following_id"`
 }
 
 type ProfileUpdatedEvent struct {
-	UserID      uuid.UUID `json:"user_id"`
-	Username    string    `json:"username"`
-	DisplayName string    `json:"display_name"`
-	AvatarURL   string    `json:"avatar_url"`
-	Verified    bool      `json:"verified"`
+	UserID      types.ID `json:"user_id"`
+	Username    string   `json:"username"`
+	DisplayName string   `json:"display_name"`
+	AvatarURL   string   `json:"avatar_url"`
+	Verified    bool     `json:"verified"`
 }
 
 // Bus query types
 
 type GetProfileQuery struct {
-	UserID uuid.UUID
+	UserID   types.ID
+	ViewerID *types.ID
 }
 
 type GetProfilesQuery struct {
-	UserIDs []uuid.UUID
+	UserIDs  []types.ID
+	ViewerID *types.ID
 }
 
 type GetFollowingQuery struct {
-	UserID uuid.UUID
+	UserID types.ID
 }
 
 // Topic constants

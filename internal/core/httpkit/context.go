@@ -36,7 +36,7 @@ func WithVerified(ctx context.Context, verified bool) context.Context {
 	return context.WithValue(ctx, verifiedKey, verified)
 }
 
-func VerifiedFrom(ctx context.Context) bool {
-	verified, _ := ctx.Value(verifiedKey).(bool)
-	return verified
+func VerifiedFrom(ctx context.Context) (verified, ok bool) {
+	verified, ok = ctx.Value(verifiedKey).(bool)
+	return verified, ok
 }

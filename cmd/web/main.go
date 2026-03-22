@@ -78,7 +78,7 @@ func main() {
 		Config:   cfg,
 	}
 
-	if err := users.Load(deps); err != nil {
+	if err := users.Load(ctx, deps); err != nil {
 		logger.Error("failed to load users module", "error", err)
 		os.Exit(1)
 	}

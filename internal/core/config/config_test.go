@@ -2,6 +2,7 @@ package config
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -26,6 +27,10 @@ func TestLoad_Defaults(t *testing.T) {
 
 	assert.Equal(t, "localhost", cfg.Mail.Host)
 	assert.Equal(t, 1025, cfg.Mail.Port)
+
+	assert.Equal(t, "dev-secret-change-in-production", cfg.JWT.Secret)
+	assert.Equal(t, 15*time.Minute, cfg.JWT.AccessTTL)
+	assert.Equal(t, 168*time.Hour, cfg.JWT.RefreshTTL)
 }
 
 func TestServerConfig_IsProd(t *testing.T) {
@@ -34,4 +39,32 @@ func TestServerConfig_IsProd(t *testing.T) {
 
 	cfg.Env = "development"
 	assert.False(t, cfg.IsProd())
+}
+
+func TestConfig_Validate_RejectsDefaultSecretInProd(t *testing.T) {
+	cfg := &Config{
+		Server: ServerConfig{Env: "production"},
+		JWT:    JWTConfig{Secret: "dev-secret-change-in-production"},
+	}
+	err := cfg.Validate()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "JWT_SECRET must be changed")
+}
+
+func TestConfig_Validate_AllowsDefaultSecretInDev(t *testing.T) {
+	cfg := &Config{
+		Server: ServerConfig{Env: "development"},
+		JWT:    JWTConfig{Secret: "dev-secret-change-in-production"},
+	}
+	err := cfg.Validate()
+	require.NoError(t, err)
+}
+
+func TestConfig_Validate_AllowsCustomSecretInProd(t *testing.T) {
+	cfg := &Config{
+		Server: ServerConfig{Env: "production"},
+		JWT:    JWTConfig{Secret: "my-real-production-secret"},
+	}
+	err := cfg.Validate()
+	require.NoError(t, err)
 }

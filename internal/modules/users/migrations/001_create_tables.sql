@@ -4,18 +4,19 @@
 -- All other tables reference it via user_id.
 -- Created first because every other table holds a FK to it.
 CREATE TABLE users.profiles (
-    id           uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+    id           uuid        PRIMARY KEY,
     username     text        NOT NULL,
     display_name text        NOT NULL DEFAULT '',
     bio          text        NOT NULL DEFAULT '',
     avatar_url   text        NOT NULL DEFAULT '',
     verified     boolean     NOT NULL DEFAULT false,
     created_at   timestamptz NOT NULL DEFAULT now(),
+    updated_at   timestamptz NOT NULL DEFAULT now(),
 
-    CONSTRAINT profiles_username_length  CHECK (char_length(username)     BETWEEN 1 AND 50),
-    CONSTRAINT profiles_display_name_len CHECK (char_length(display_name) <= 100),
-    CONSTRAINT profiles_bio_len          CHECK (char_length(bio)          <= 500),
-    CONSTRAINT profiles_username_format  CHECK (username ~ '^[A-Za-z0-9_]+$')
+    CONSTRAINT profiles_username_len      CHECK (char_length(username)     BETWEEN 1 AND 50),
+    CONSTRAINT profiles_display_name_len  CHECK (char_length(display_name) <= 100),
+    CONSTRAINT profiles_bio_len           CHECK (char_length(bio)          <= 500),
+    CONSTRAINT profiles_username_format   CHECK (username ~ '^[A-Za-z0-9_]+$')
 );
 
 CREATE UNIQUE INDEX profiles_username_idx ON users.profiles (lower(username));
@@ -23,13 +24,13 @@ CREATE UNIQUE INDEX profiles_username_idx ON users.profiles (lower(username));
 -- credentials holds the email/password pair for local auth.
 -- One credential row per user (unique user_id).
 CREATE TABLE users.credentials (
-    id            uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+    id            uuid        PRIMARY KEY,
     user_id       uuid        NOT NULL REFERENCES users.profiles (id) ON DELETE CASCADE,
     email         text        NOT NULL,
     password_hash text        NOT NULL,
     created_at    timestamptz NOT NULL DEFAULT now(),
 
-    CONSTRAINT credentials_email_length CHECK (char_length(email) <= 254),
+    CONSTRAINT credentials_email_len     CHECK (char_length(email) <= 254),
     CONSTRAINT credentials_user_id_unique UNIQUE (user_id)
 );
 
@@ -39,7 +40,7 @@ CREATE UNIQUE INDEX credentials_email_idx ON users.credentials (lower(email));
 -- A user may link multiple providers; a given provider+provider_id pair
 -- is globally unique.
 CREATE TABLE users.oauth_links (
-    id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+    id          uuid        PRIMARY KEY,
     user_id     uuid        NOT NULL REFERENCES users.profiles (id) ON DELETE CASCADE,
     provider    text        NOT NULL,
     provider_id text        NOT NULL,
@@ -52,16 +53,17 @@ CREATE TABLE users.oauth_links (
 
 CREATE INDEX oauth_links_user_id_idx ON users.oauth_links (user_id);
 
--- sessions tracks refresh tokens for the token-rotation auth flow.
+-- sessions tracks refresh token hashes for the token-rotation auth flow.
 -- Access tokens are short-lived JWTs and are not stored here.
+-- Raw tokens are never persisted; only SHA-256 hashes are stored.
 CREATE TABLE users.sessions (
-    id            uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id       uuid        NOT NULL REFERENCES users.profiles (id) ON DELETE CASCADE,
-    refresh_token text        NOT NULL,
-    expires_at    timestamptz NOT NULL,
-    created_at    timestamptz NOT NULL DEFAULT now(),
+    id                 uuid        PRIMARY KEY,
+    user_id            uuid        NOT NULL REFERENCES users.profiles (id) ON DELETE CASCADE,
+    refresh_token_hash text        NOT NULL,
+    expires_at         timestamptz NOT NULL,
+    created_at         timestamptz NOT NULL DEFAULT now(),
 
-    CONSTRAINT sessions_refresh_token_unique UNIQUE (refresh_token)
+    CONSTRAINT sessions_refresh_token_hash_unique UNIQUE (refresh_token_hash)
 );
 
 CREATE INDEX sessions_user_id_idx   ON users.sessions (user_id);
@@ -72,12 +74,12 @@ CREATE INDEX sessions_expires_at_idx ON users.sessions (expires_at);
 -- Hierarchy: (no row) < moderator < admin
 -- Only one role row per user is permitted (unique user_id).
 CREATE TABLE users.roles (
-    id         uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+    id         uuid        PRIMARY KEY,
     user_id    uuid        NOT NULL REFERENCES users.profiles (id) ON DELETE CASCADE,
     role       text        NOT NULL,
     created_at timestamptz NOT NULL DEFAULT now(),
 
-    CONSTRAINT roles_role_valid    CHECK (role IN ('moderator', 'admin')),
+    CONSTRAINT roles_role_valid     CHECK (role IN ('moderator', 'admin')),
     CONSTRAINT roles_user_id_unique UNIQUE (user_id)
 );
 

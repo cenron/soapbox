@@ -12,15 +12,17 @@ type Service struct {
 	tokens *TokenService
 	bus    bus.Bus
 	logger *slog.Logger
-	config *config.Config
+	jwt    config.JWTConfig
+	isProd bool
 }
 
-func NewService(store *Store, tokens *TokenService, b bus.Bus, logger *slog.Logger, cfg *config.Config) *Service {
+func NewService(store *Store, tokens *TokenService, b bus.Bus, logger *slog.Logger, jwt config.JWTConfig, isProd bool) *Service {
 	return &Service{
 		store:  store,
 		tokens: tokens,
 		bus:    b,
 		logger: logger,
-		config: cfg,
+		jwt:    jwt,
+		isProd: isProd,
 	}
 }

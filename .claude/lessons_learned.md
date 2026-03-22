@@ -37,3 +37,7 @@
 ## [2026-03-22] npm create vite@latest initializes a nested git repo
 **What happened:** `npm create vite@latest web` runs `git init` inside `web/`, creating a nested `.git` directory. The parent repo then treats `web/` as a submodule-like entry and `git add` silently does nothing.
 **Takeaway:** After scaffolding with Vite, immediately `rm -rf web/.git` before staging any files.
+
+## [2026-03-22] Goose splits dollar-quoted PL/pgSQL blocks on semicolons
+**What happened:** A `DO $$ ... $$;` block in a goose SQL migration failed with "unterminated dollar-quoted string" because goose splits statements on `;` by default, breaking the block mid-body.
+**Takeaway:** Wrap PL/pgSQL blocks (DO, CREATE FUNCTION, etc.) with `-- +goose StatementBegin` / `-- +goose StatementEnd` so goose treats them as a single statement.

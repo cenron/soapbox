@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -65,5 +66,17 @@ func Load() (*Config, error) {
 	if err := env.Parse(cfg); err != nil {
 		return nil, err
 	}
+
+	if err := cfg.Validate(); err != nil {
+		return nil, err
+	}
+
 	return cfg, nil
+}
+
+func (c *Config) Validate() error {
+	if c.Server.IsProd() && c.JWT.Secret == "dev-secret-change-in-production" {
+		return fmt.Errorf("config: JWT_SECRET must be changed from default in production")
+	}
+	return nil
 }
