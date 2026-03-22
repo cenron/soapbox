@@ -73,3 +73,7 @@
 ## [2026-03-22] golangci-lint gocritic requires named results when both returns are the same type
 **What happened:** `func VerifiedFrom(ctx) (bool, bool)` triggered `unnamedResult` lint error. Then `(verified bool, ok bool)` triggered `paramTypeCombine`. And named returns require `=` not `:=` in the body.
 **Takeaway:** When returning two values of the same type, use combined named results: `(verified, ok bool)` and assign with `=` not `:=`.
+
+## [2026-03-22] swaggo does not support Go generics in annotations
+**What happened:** `@Success 200 {object} types.CursorPage[ProfileResponse]` caused `ParseComment error: cannot find type definition`. swaggo's parser doesn't resolve generic type instantiations.
+**Takeaway:** Create a concrete swagger-only struct (e.g., `ProfileCursorPage`) that mirrors the generic type's fields and use that in annotations. The runtime code still uses the generic `types.CursorPage[T]`.
