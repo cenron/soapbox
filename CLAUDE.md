@@ -234,6 +234,7 @@ Don't just run the steps — prove it works. Ask: "Would a staff engineer approv
 8. **Pattern consistency** — compare your module's patterns against existing completed modules. Error handling, response formatting, test structure, and file organization must match.
 9. **Design spec compliance** — verify your module implements all endpoints, events, and queries listed in `docs/specs/2026-03-21-soapbox-design.md` for this module. Nothing missing, nothing extra.
 10. **Plan status update** — update `docs/plan.md` to mark this module as `complete`.
+11. **E2E tests** — if this module includes frontend changes, check `docs/e2e-test-plan.md` for the corresponding phase. Write and pass ALL listed e2e tests before opening the PR. Run `make web-test-e2e` to verify. Mark the phase status as `complete` in the test plan.
 
 If any check fails, fix the issue and re-run ALL checks. Only create the PR when everything passes clean.
 
