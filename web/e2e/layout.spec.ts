@@ -1,9 +1,23 @@
 import { test, expect } from "@playwright/test"
+import { loginAs, SEED } from "./helpers"
 
 test.describe("layout", () => {
-  test("desktop shows sidebar navigation", async ({ page }) => {
+  test("desktop shows public sidebar links when unauthenticated", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 720 })
     await page.goto("/login")
+
+    await expect(page.getByRole("link", { name: "Home" })).toBeVisible()
+    await expect(page.getByRole("link", { name: "Search" })).toBeVisible()
+
+    // Auth-only links should be hidden
+    await expect(page.getByRole("link", { name: "Notifications" })).not.toBeVisible()
+    await expect(page.getByRole("link", { name: "Profile" })).not.toBeVisible()
+    await expect(page.getByRole("link", { name: "Settings" })).not.toBeVisible()
+  })
+
+  test("desktop shows all sidebar links when authenticated", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 720 })
+    await loginAs(page, SEED.user.email, SEED.user.password)
 
     await expect(page.getByRole("link", { name: "Home" })).toBeVisible()
     await expect(page.getByRole("link", { name: "Search" })).toBeVisible()

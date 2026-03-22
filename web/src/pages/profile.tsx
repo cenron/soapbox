@@ -12,7 +12,8 @@ import { ProfileHeader } from "@/modules/users/components/profile-header"
 import { UserCard } from "@/modules/users/components/user-card"
 
 export function ProfilePage() {
-  const { username = "" } = useParams()
+  const { username: rawUsername = "" } = useParams()
+  const username = rawUsername.replace(/^@/, "")
   const { user: currentUser } = useAuth()
 
   const profileQuery = useQuery({

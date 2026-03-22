@@ -4,6 +4,8 @@ import {
   postUsersByUsernameFollowMutation,
   deleteUsersByUsernameFollowMutation,
   getUsersByUsernameQueryKey,
+  getUsersByUsernameFollowersQueryKey,
+  getUsersByUsernameFollowingQueryKey,
 } from "@/shared/api/generated/@tanstack/react-query.gen"
 import { useAuth } from "@/shared/auth/auth-context"
 import { Button } from "@/shared/ui/button"
@@ -22,15 +24,20 @@ export function FollowButton({ username, isFollowing, onToggle }: FollowButtonPr
 
   const invalidateAndToggle = useCallback(() => {
     setError(null)
-    void queryClient.invalidateQueries({
-      queryKey: getUsersByUsernameQueryKey({ path: { username } }),
-    })
+    const path = { path: { username } }
+    void queryClient.invalidateQueries({ queryKey: getUsersByUsernameQueryKey(path) })
+    void queryClient.invalidateQueries({ queryKey: getUsersByUsernameFollowersQueryKey(path) })
+    void queryClient.invalidateQueries({ queryKey: getUsersByUsernameFollowingQueryKey(path) })
     onToggle?.()
   }, [queryClient, username, onToggle])
 
   const handleError = useCallback((err: { detail?: string; message?: string }) => {
     setError(err?.detail ?? err?.message ?? "Something went wrong.")
-  }, [])
+    const path = { path: { username } }
+    void queryClient.invalidateQueries({ queryKey: getUsersByUsernameQueryKey(path) })
+    void queryClient.invalidateQueries({ queryKey: getUsersByUsernameFollowersQueryKey(path) })
+    void queryClient.invalidateQueries({ queryKey: getUsersByUsernameFollowingQueryKey(path) })
+  }, [queryClient, username])
 
   const followMutation = useMutation({
     ...postUsersByUsernameFollowMutation(),

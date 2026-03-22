@@ -8,11 +8,19 @@ test.describe("logout", () => {
     const trigger = page.locator("button").filter({ hasText: `@${SEED.user.username}` })
     await trigger.click()
 
+    // Assert the logout API call succeeds.
+    const logoutPromise = page.waitForResponse(
+      (res) => res.url().includes("/api/v1/auth/logout") && res.request().method() === "POST",
+    )
+
     await page.getByRole("menuitem", { name: "Log out" }).click()
+
+    const logoutResponse = await logoutPromise
+    expect(logoutResponse.status()).toBe(204)
 
     await page.waitForURL("/login")
 
-    await expect(page.getByRole("link", { name: "Log in" })).toBeVisible()
-    await expect(page.getByRole("link", { name: "Sign up" })).toBeVisible()
+    await expect(page.getByRole("banner").getByRole("link", { name: "Log in" })).toBeVisible()
+    await expect(page.getByRole("banner").getByRole("link", { name: "Sign up" })).toBeVisible()
   })
 })

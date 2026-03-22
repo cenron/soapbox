@@ -226,6 +226,8 @@ paths:
           description: Internal server error
           schema:
             $ref: '#/definitions/types.AppError'
+      security:
+      - BearerAuth: []
       summary: Get user profile
       tags:
       - users

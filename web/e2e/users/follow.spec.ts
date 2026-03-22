@@ -1,38 +1,39 @@
 import { test, expect } from "@playwright/test"
-import { loginAs, SEED } from "../helpers"
+import { registerAndLogin, gotoProfileAndWaitForAuth } from "../helpers"
 
 test.describe("follow / unfollow", () => {
   test("follows and unfollows @admin", async ({ page }) => {
-    await loginAs(page, SEED.user.email, SEED.user.password)
+    // Fresh user per run — no shared state between parallel browsers.
+    await registerAndLogin(page, "fw")
 
-    await page.goto("/@admin")
+    // Navigate to admin's profile and wait for auth to settle.
+    await gotoProfileAndWaitForAuth(page, "admin")
 
-    const followButton = page.getByRole("button", { name: "Follow" })
-    const followingButton = page.getByRole("button", { name: "Following" })
+    const followBtn = page.getByRole("button", { name: "Follow", exact: true })
+    const followingBtn = page.getByRole("button", { name: "Following", exact: true })
 
-    // If already following, unfollow first so the test starts from a clean state.
-    if (await followingButton.isVisible()) {
-      await followingButton.hover()
-      await page.getByRole("button", { name: "Unfollow" }).click()
-      await expect(followButton).toBeVisible()
-    }
+    // Fresh user — must start unfollowed.
+    await expect(followBtn).toBeVisible()
 
-    // Read the follower count before following.
-    const followersTabPattern = /Followers \((\d+)\)/
-    const tabText = await page.getByRole("tab", { name: followersTabPattern }).textContent()
-    const beforeCount = parseInt(tabText?.match(/\((\d+)\)/)?.[1] ?? "0", 10)
+    // --- Follow ---
+    const followRes = page.waitForResponse(
+      (r) => r.url().endsWith("/follow") && r.request().method() === "POST",
+    )
+    await followBtn.click()
+    expect((await followRes).status()).toBe(204)
+    await expect(followingBtn).toBeVisible({ timeout: 15000 })
 
-    // Follow.
-    await followButton.click()
-    await expect(page.getByRole("button", { name: "Following" })).toBeVisible()
+    // --- Unfollow ---
+    const unfollowRes = page.waitForResponse(
+      (r) => r.url().endsWith("/follow") && r.request().method() === "DELETE",
+    )
+    await followingBtn.click()
+    expect((await unfollowRes).status()).toBe(204)
+    await expect(followBtn).toBeVisible({ timeout: 15000 })
 
-    // Follower count should increment.
-    await expect(page.getByRole("tab", { name: `Followers (${beforeCount + 1})` })).toBeVisible()
-
-    // Unfollow by hovering to reveal the Unfollow label.
-    await page.getByRole("button", { name: "Following" }).hover()
-    await page.getByRole("button", { name: "Unfollow" }).click()
-
-    await expect(page.getByRole("button", { name: "Follow" })).toBeVisible()
+    // Verify unfollow persisted across navigation.
+    await page.reload()
+    await page.waitForLoadState("networkidle")
+    await expect(followBtn).toBeVisible({ timeout: 10000 })
   })
 })

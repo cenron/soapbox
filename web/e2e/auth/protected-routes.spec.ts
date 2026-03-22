@@ -18,6 +18,6 @@ test.describe("protected routes", () => {
 
     await page.waitForURL("/settings")
     await expect(page).toHaveURL("/settings")
-    await expect(page.getByRole("heading", { name: "Edit profile" })).toBeVisible()
+    await expect(page.getByText("Edit profile")).toBeVisible()
   })
 })

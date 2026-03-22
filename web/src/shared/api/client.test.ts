@@ -18,21 +18,31 @@ describe("hey-api client config", () => {
     expect(config.credentials).toBe("include")
   })
 
-  it("provides auth function that returns token when set", () => {
-    vi.mocked(getAccessToken).mockReturnValue("test-token")
+  it("returns Bearer-prefixed token when authenticated", () => {
+    vi.mocked(getAccessToken).mockReturnValue("jwt-abc-123")
 
     const config = createClientConfig({})
     const authFn = config.auth as () => string
-    expect(authFn()).toBe("test-token")
+    expect(authFn()).toBe("Bearer jwt-abc-123")
 
     vi.mocked(getAccessToken).mockReturnValue(null)
   })
 
-  it("provides auth function that returns empty string when no token", () => {
+  it("returns empty string when no token is set", () => {
     vi.mocked(getAccessToken).mockReturnValue(null)
 
     const config = createClientConfig({})
     const authFn = config.auth as () => string
     expect(authFn()).toBe("")
+  })
+
+  it("never returns 'Bearer ' with no token (no dangling prefix)", () => {
+    vi.mocked(getAccessToken).mockReturnValue(null)
+
+    const config = createClientConfig({})
+    const authFn = config.auth as () => string
+    const result = authFn()
+
+    expect(result).not.toMatch(/^Bearer\s*$/)
   })
 })

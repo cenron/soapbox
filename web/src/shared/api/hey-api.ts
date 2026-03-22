@@ -5,5 +5,8 @@ export const createClientConfig: CreateClientConfig = (config) => ({
   ...config,
   baseUrl: "/api/v1",
   credentials: "include",
-  auth: () => getAccessToken() ?? "",
+  auth: () => {
+    const token = getAccessToken()
+    return token ? `Bearer ${token}` : ""
+  },
 })

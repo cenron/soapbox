@@ -13,7 +13,7 @@ test.describe("smoke tests", () => {
 
   test("shows login and signup buttons when unauthenticated", async ({ page }) => {
     await page.goto("/")
-    await expect(page.getByRole("link", { name: "Log in" })).toBeVisible()
-    await expect(page.getByRole("link", { name: "Sign up" })).toBeVisible()
+    await expect(page.getByRole("banner").getByRole("link", { name: "Log in" })).toBeVisible()
+    await expect(page.getByRole("banner").getByRole("link", { name: "Sign up" })).toBeVisible()
   })
 })

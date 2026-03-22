@@ -3,16 +3,16 @@ import { test, expect } from "@playwright/test"
 test.describe("navigation", () => {
   test("login link navigates to /login", async ({ page }) => {
     await page.goto("/")
-    await page.getByRole("link", { name: "Log in" }).click()
+    await page.getByRole("banner").getByRole("link", { name: "Log in" }).click()
     await expect(page).toHaveURL("/login")
-    await expect(page.getByRole("heading", { name: "Log in" })).toBeVisible()
+    await expect(page.getByText("Log in to Soapbox")).toBeVisible()
   })
 
   test("signup link navigates to /register", async ({ page }) => {
     await page.goto("/")
-    await page.getByRole("link", { name: "Sign up" }).click()
+    await page.getByRole("banner").getByRole("link", { name: "Sign up" }).click()
     await expect(page).toHaveURL("/register")
-    await expect(page.getByRole("heading", { name: "Create account" })).toBeVisible()
+    await expect(page.getByText("Create your account")).toBeVisible()
   })
 
   test("unknown routes show 404 page", async ({ page }) => {

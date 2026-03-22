@@ -6,16 +6,24 @@ import { Sheet, SheetContent, SheetTrigger } from "@/shared/ui/sheet"
 import { Separator } from "@/shared/ui/separator"
 import { cn } from "@/shared/lib/utils"
 
-function useNavItems() {
+interface NavItem {
+  label: string
+  to: string
+  authOnly?: boolean
+}
+
+function useNavItems(): NavItem[] {
   const { user } = useAuth()
 
-  return [
+  const items: NavItem[] = [
     { label: "Home", to: "/" },
     { label: "Search", to: "/search" },
-    { label: "Notifications", to: "/notifications" },
-    { label: "Profile", to: user ? `/@${user.username}` : "/login" },
-    { label: "Settings", to: "/settings" },
+    { label: "Notifications", to: "/notifications", authOnly: true },
+    { label: "Profile", to: user ? `/@${user.username}` : "/login", authOnly: true },
+    { label: "Settings", to: "/settings", authOnly: true },
   ]
+
+  return items.filter((item) => !item.authOnly || user)
 }
 
 function NavLinks({ onClick }: { onClick?: () => void }) {

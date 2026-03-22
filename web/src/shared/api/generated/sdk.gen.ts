@@ -91,7 +91,11 @@ export const getUsersSearch = <ThrowOnError extends boolean = false>(options: Op
  *
  * Retrieve a user's profile by username. If authenticated, includes whether the viewer follows this user.
  */
-export const getUsersByUsername = <ThrowOnError extends boolean = false>(options: Options<GetUsersByUsernameData, ThrowOnError>) => (options.client ?? client).get<GetUsersByUsernameResponses, GetUsersByUsernameErrors, ThrowOnError>({ url: '/users/{username}', ...options });
+export const getUsersByUsername = <ThrowOnError extends boolean = false>(options: Options<GetUsersByUsernameData, ThrowOnError>) => (options.client ?? client).get<GetUsersByUsernameResponses, GetUsersByUsernameErrors, ThrowOnError>({
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/users/{username}',
+    ...options
+});
 
 /**
  * Unfollow a user
