@@ -1,4 +1,4 @@
-.PHONY: build run test lint swagger web-generate-api generate docker-up docker-down web-install web-dev web-build web-test web-test-e2e web-lint ensure-dist
+.PHONY: build run be-run web-run test lint swagger web-generate-api generate docker-up docker-down web-install web-dev web-build web-test web-test-e2e web-lint ensure-dist
 
 build: web-build swagger
 	go build -o bin/web ./cmd/web
@@ -9,7 +9,18 @@ ensure-dist:
 
 run: ensure-dist swagger
 	@test -x $$(go env GOPATH)/bin/air || { echo "air not found. Install it: go install github.com/air-verse/air@latest"; exit 1; }
+	@echo "Starting backend (air) and frontend (vite)..."
+	@trap 'kill 0' EXIT; \
+		$$(go env GOPATH)/bin/air & \
+		cd web && npm run dev & \
+		wait
+
+be-run: ensure-dist swagger
+	@test -x $$(go env GOPATH)/bin/air || { echo "air not found. Install it: go install github.com/air-verse/air@latest"; exit 1; }
 	$$(go env GOPATH)/bin/air
+
+web-run:
+	cd web && npm run dev
 
 test: web-test
 	go test ./...
