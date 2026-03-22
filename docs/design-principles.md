@@ -75,12 +75,12 @@ src/
   features/
     auth/           # Everything for auth: routes, services, controllers, tests, types
     billing/        # Everything for billing
-  shared/           # Cross-feature utilities, components, middleware
+  core/             # Cross-feature utilities, components, middleware
   models/           # Relational entities / domain models
 ```
 
 - Each feature folder is self-contained: routes, services, controllers, types, and tests live together.
-- `shared/` holds code used by multiple features. Move code here only when reuse is proven, not speculative.
+- `core/` holds code used by multiple features. Move code here only when reuse is proven, not speculative.
 - Language/framework best practices override this structure when they conflict.
 
 ### Design Patterns

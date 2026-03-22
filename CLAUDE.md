@@ -62,7 +62,7 @@ Modules are isolated. This is the foundational architectural principle of this p
 - **`internal/<module>/` directories are sovereign territory.** Only the developer actively building that module may modify files in its directory.
 - **No cross-module imports.** If you find yourself writing `import "soapbox/internal/posts"` from inside `internal/feed/`, STOP. You are violating the boundary. Use the bus.
 - **No cross-schema queries.** If you find yourself writing a SQL query that joins across schemas (e.g., `posts.posts JOIN users.profiles`), STOP. You are violating the boundary. Use the bus.
-- **`internal/shared/` is the only shared code.** If two modules need the same utility, it goes in shared. But shared NEVER contains business logic — only infrastructure (bus, db, http, cache, registry, types).
+- **`internal/core/` is the only shared code.** If two modules need the same utility, it goes in core. But core NEVER contains business logic — only infrastructure (bus, db, http, cache, registry, types).
 
 If you catch yourself about to violate any of these, stop and tell the user what you were about to do and why it's wrong.
 
@@ -131,7 +131,7 @@ Follow SOLID principles. Keep coupling low and cohesion high.
 - **Composition at the entry point.** All wiring and construction happens in `cmd/web/main.go`. Use a factory function to construct the dependency graph from config. Makes it clear what depends on what.
 - **Composition over inheritance.** Prefer composing objects from smaller parts. Use inheritance only for genuine is-a relationships.
 - **Separate what's yours from what's theirs.** External services (S3, OAuth providers, email) get interfaces and dedicated provider folders. Provider-specific code never mixes into business logic.
-- **One implementation, one location.** Shared abstractions live in `internal/shared/`. When a second module needs something that currently lives in one module, move it to shared — don't duplicate it. Extending an existing abstraction is always preferable to creating a parallel one.
+- **One implementation, one location.** Shared abstractions live in `internal/core/`. When a second module needs something that currently lives in one module, move it to core — don't duplicate it. Extending an existing abstraction is always preferable to creating a parallel one.
 - **Factory + config for wiring.** Bundle all settings into a config object, and use a factory function to construct the dependency graph from it.
 
 ### Project structure
@@ -140,12 +140,12 @@ Follow SOLID principles. Keep coupling low and cohesion high.
 soapbox/
 ├── cmd/web/main.go              # Composition root — wires modules
 ├── internal/
-│   ├── shared/                  # Infrastructure only (bus, db, http, cache, registry, types)
+│   ├── core/                    # Infrastructure only (bus, db, httpkit, cache, registry, types)
 │   │   ├── bus/                 # Bus interface + implementation
 │   │   ├── registry/            # Registry interface + implementation
 │   │   ├── cache/               # Cache interface + implementation
-│   │   ├── db/                  # Connection pool, migrations, transactions
-│   │   ├── http/                # Response helpers, middleware, pagination
+│   │   ├── db/                  # sqlx connection, migrations, transactions
+│   │   ├── httpkit/             # Response helpers, middleware, pagination
 │   │   └── types/               # Common types (IDs, timestamps)
 │   ├── auth/                    # Auth module (credentials, sessions, roles, OAuth)
 │   ├── users/                   # Users module (profiles, follows)
@@ -160,6 +160,15 @@ soapbox/
 │   └── entrypoint.sh            # APP_MODE selects binary
 └── docker-compose.yml           # Dev infra (Postgres, MinIO, Mailpit)
 ```
+
+## Swagger
+
+Every HTTP handler that serves an API endpoint **must** include `swaggo/swag` annotations. This is not optional — undocumented endpoints break the API contract for frontend developers.
+
+- Add `@Summary`, `@Description`, `@Tags`, `@Accept`, `@Produce`, `@Param`, `@Success`, `@Failure`, and `@Router` annotations above every handler function.
+- After adding or changing endpoints, run `make swagger` to regenerate docs (this also runs automatically on `make build` and `make run`).
+- Swagger UI is served at `/swagger/index.html`.
+- Generated docs live in `api/swagger/` — these files are committed to the repo.
 
 ## Testing
 
@@ -211,7 +220,7 @@ Don't just run the steps — prove it works. Ask: "Would a staff engineer approv
 4. **Module boundary audit** — grep the entire module directory for imports of other `internal/` modules. If any exist, fix them before proceeding.
    ```bash
    # Backend: check for cross-module imports
-   grep -r "soapbox/internal/" internal/<your-module>/ | grep -v "soapbox/internal/shared/"
+   grep -r "soapbox/internal/" internal/<your-module>/ | grep -v "soapbox/internal/core/"
    # Frontend: check for cross-module imports
    grep -r "from.*modules/" web/src/modules/<your-module>/ | grep -v "from.*shared/"
    ```

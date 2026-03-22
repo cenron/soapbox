@@ -1,0 +1,15 @@
+basePath: /api/v1
+consumes:
+- application/json
+host: localhost:8080
+info:
+  contact: {}
+  description: Chronological microblogging platform — pre-2022 Twitter clone.
+  title: Soapbox API
+  version: "1.0"
+paths: {}
+produces:
+- application/json
+schemes:
+- http
+swagger: "2.0"
