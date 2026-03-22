@@ -47,10 +47,11 @@ function ProfileForm({ profile, username }: ProfileFormProps) {
     setSuccess(false)
     setError(null)
 
-    const body: UsersUpdateProfileRequest = {}
-    if (displayName) body.display_name = displayName
-    if (bio) body.bio = bio
-    if (avatarUrl) body.avatar_url = avatarUrl
+    const body: UsersUpdateProfileRequest = {
+      display_name: displayName,
+      bio,
+      avatar_url: avatarUrl,
+    }
 
     mutate({ body })
   }
@@ -118,6 +119,14 @@ export function SettingsPage() {
         <CardContent>
           {profileQuery.isLoading && (
             <p className="text-sm text-muted-foreground">Loading...</p>
+          )}
+          {profileQuery.isError && (
+            <div className="space-y-2">
+              <p className="text-sm text-red-500">Failed to load profile.</p>
+              <Button variant="outline" size="sm" onClick={() => profileQuery.refetch()}>
+                Retry
+              </Button>
+            </div>
           )}
           {profileQuery.data && (
             <ProfileForm

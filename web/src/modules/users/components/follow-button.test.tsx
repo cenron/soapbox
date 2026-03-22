@@ -109,7 +109,7 @@ describe("FollowButton", () => {
       capturedFollowOnSuccess?.()
     })
 
-    const invalidatedKeys = spy.mock.calls.map((call) => call[0].queryKey)
+    const invalidatedKeys = spy.mock.calls.map((call) => (call[0] as { queryKey: unknown }).queryKey)
     expect(invalidatedKeys).toContainEqual(["users", "admin"])
     expect(invalidatedKeys).toContainEqual(["users", "admin", "followers"])
     expect(invalidatedKeys).toContainEqual(["users", "admin", "following"])
@@ -122,7 +122,7 @@ describe("FollowButton", () => {
       capturedFollowOnError?.({ detail: "already following" })
     })
 
-    const invalidatedKeys = spy.mock.calls.map((call) => call[0].queryKey)
+    const invalidatedKeys = spy.mock.calls.map((call) => (call[0] as { queryKey: unknown }).queryKey)
     expect(invalidatedKeys).toContainEqual(["users", "admin"])
     expect(invalidatedKeys).toContainEqual(["users", "admin", "followers"])
     expect(invalidatedKeys).toContainEqual(["users", "admin", "following"])

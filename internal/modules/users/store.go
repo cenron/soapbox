@@ -307,17 +307,9 @@ func (s *Store) CreateFollow(ctx context.Context, followerID, followingID types.
 func (s *Store) DeleteFollow(ctx context.Context, followerID, followingID types.ID) error {
 	const q = `DELETE FROM users.follows WHERE follower_id = $1 AND following_id = $2`
 
-	result, err := s.db.Conn.ExecContext(ctx, q, followerID, followingID)
+	_, err := s.db.Conn.ExecContext(ctx, q, followerID, followingID)
 	if err != nil {
 		return fmt.Errorf("store: delete follow: %w", err)
-	}
-
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("store: delete follow: rows affected: %w", err)
-	}
-	if rows == 0 {
-		return types.NewNotFound("follow relationship")
 	}
 
 	return nil

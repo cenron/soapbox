@@ -39,7 +39,21 @@ export function ProfilePage() {
     )
   }
 
-  if (profileQuery.isError || !profileQuery.data) {
+  if (profileQuery.isError) {
+    const status = (profileQuery.error as { status?: number })?.status
+    const isNotFound = status === 404
+
+    return (
+      <div className="p-6">
+        <h1 className="text-xl font-bold">{isNotFound ? "User not found" : "Something went wrong"}</h1>
+        <p className="text-muted-foreground">
+          {isNotFound ? `@${username} does not exist.` : "Failed to load profile. Please try again."}
+        </p>
+      </div>
+    )
+  }
+
+  if (!profileQuery.data) {
     return (
       <div className="p-6">
         <h1 className="text-xl font-bold">User not found</h1>
@@ -79,7 +93,10 @@ export function ProfilePage() {
           {followersQuery.isLoading && (
             <p className="text-sm text-muted-foreground">Loading...</p>
           )}
-          {!followersQuery.isLoading && followers.length === 0 && (
+          {followersQuery.isError && (
+            <p className="text-sm text-red-500">Failed to load followers.</p>
+          )}
+          {!followersQuery.isLoading && !followersQuery.isError && followers.length === 0 && (
             <p className="text-sm text-muted-foreground">No followers yet.</p>
           )}
           {followers.map((u) => (
@@ -91,7 +108,10 @@ export function ProfilePage() {
           {followingQuery.isLoading && (
             <p className="text-sm text-muted-foreground">Loading...</p>
           )}
-          {!followingQuery.isLoading && following.length === 0 && (
+          {followingQuery.isError && (
+            <p className="text-sm text-red-500">Failed to load following.</p>
+          )}
+          {!followingQuery.isLoading && !followingQuery.isError && following.length === 0 && (
             <p className="text-sm text-muted-foreground">Not following anyone yet.</p>
           )}
           {following.map((u) => (
