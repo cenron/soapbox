@@ -236,6 +236,10 @@ Don't just run the steps — prove it works. Ask: "Would a staff engineer approv
 
 If any check fails, fix the issue and re-run ALL checks. Only create the PR when everything passes clean.
 
+### MANDATORY: Post-PR review
+
+After creating a PR and once comments have been added by reviewers (human or bot), run `/review-pr` to triage and address all feedback. Do not let PR comments sit unaddressed.
+
 ## Tech stack
 
 ### Go (backend)
