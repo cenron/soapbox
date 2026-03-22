@@ -21,8 +21,9 @@ A Twitter clone with pre-2022 feel. Chronological feed, no algorithmic manipulat
 - **User profiles:** username, display name, bio, avatar
 - **Search:** posts, users, hashtags
 - **Moderation:** block, mute, report (manual review)
-- **Auth:** email+password + OAuth (Google, GitHub, Apple), role-based access (SYSTEM admin role, hardcoded, not modifiable via API)
-- **Admin UI:** role-gated within the SPA — admin users see inline controls (ban, block from feed) plus a dedicated admin section for reviewing reports
+- **Auth:** email+password + OAuth (Google, GitHub, Apple), role-based access (moderator and admin roles) — handled within the users module
+- **Identity verification:** verified flag on profiles, planned login.gov integration post-MVP
+- **Admin/mod UI:** role-gated within the SPA — moderators see report review and content moderation, admins see user management (ban, promote/demote) plus everything moderators see
 - **Mobile-first responsive web UI**
 
 ## Post-MVP features
@@ -67,7 +68,6 @@ graph TB
         end
 
         subgraph "Modules"
-            AUTH[auth]
             USERS[users]
             POSTS[posts]
             FEED[feed]
@@ -78,9 +78,9 @@ graph TB
     end
 
     CLIENT[React SPA<br/>embedded via go:embed] -->|REST API + WebSocket| HTTP
-    HTTP --> AUTH & USERS & POSTS & FEED & NOTIF & MEDIA & MOD
-    AUTH & USERS & POSTS & FEED & NOTIF & MEDIA & MOD --> BUS
-    AUTH & USERS & POSTS & FEED & NOTIF & MEDIA & MOD --> DB
+    HTTP --> USERS & POSTS & FEED & NOTIF & MEDIA & MOD
+    USERS & POSTS & FEED & NOTIF & MEDIA & MOD --> BUS
+    USERS & POSTS & FEED & NOTIF & MEDIA & MOD --> DB
     DB --> PG[(Postgres<br/>schema-per-module)]
     MEDIA -->|S3 API| S3[(MinIO / S3)]
 ```
@@ -104,8 +104,7 @@ soapbox/
 │   │   ├── db/                  # sqlx connection, migration runner, transaction helpers
 │   │   ├── httpkit/             # Response writers, error formatting, pagination, middleware
 │   │   └── types/               # Common types (IDs, timestamps, pagination params)
-│   ├── auth/
-│   ├── users/
+│   ├── users/                 # Auth + profiles + follows
 │   ├── posts/
 │   ├── feed/
 │   ├── notifications/
@@ -127,7 +126,6 @@ The `cmd/web/main.go` is a thin wiring layer. It initializes core infrastructure
 func main() {
     core.Init() // DB, bus, registry, cache, config, HTTP server
 
-    auth.Load()
     users.Load()
     posts.Load()
     feed.Load()
@@ -219,29 +217,26 @@ Modules are opaque to these swaps. They call `bus.Publish()`, `registry.Lookup()
 
 Single Postgres instance. Each module owns its own schema. No cross-schema foreign keys. Modules reference each other by ID only, enforced at the application level through the bus.
 
-### auth schema
-
-| Table | Columns |
-|-------|---------|
-| `auth.credentials` | id, user_id, email, password_hash, created_at |
-| `auth.oauth_links` | id, user_id, provider, provider_id, created_at |
-| `auth.sessions` | id, user_id, refresh_token, expires_at, created_at |
-| `auth.roles` | id, user_id, role, created_at |
-
-The SYSTEM admin role is seeded at database initialization and cannot be created, modified, or deleted through the API. The JWT payload includes the user's role for frontend and backend authorization checks.
-
 ### users schema
 
 | Table | Columns |
 |-------|---------|
-| `users.profiles` | id, username, display_name, bio, avatar_url, created_at |
+| `users.credentials` | id, user_id, email, password_hash, created_at |
+| `users.oauth_links` | id, user_id, provider, provider_id, created_at |
+| `users.sessions` | id, user_id, refresh_token, expires_at, created_at |
+| `users.roles` | id, user_id, role, created_at |
+| `users.profiles` | id, username, display_name, bio, avatar_url, verified, created_at |
 | `users.follows` | follower_id, following_id, created_at |
+
+Roles follow a simple hierarchy: (default user) < moderator < admin. Users with no role row are regular users. The admin role is seeded at database initialization. Moderators are promoted by admins via the API. The JWT payload includes the user's role and verified status for frontend and backend authorization checks. Registration creates credentials and a default profile in a single transaction.
+
+The `verified` flag on profiles indicates identity verification (planned login.gov integration post-MVP). Verification is orthogonal to roles — a moderator or admin can also be verified. For MVP, admins can manually set the verified flag.
 
 ### posts schema
 
 | Table | Columns |
 |-------|---------|
-| `posts.posts` | id, author_id, author_username, author_display_name, author_avatar_url, body, parent_id, repost_of_id, created_at |
+| `posts.posts` | id, author_id, author_username, author_display_name, author_avatar_url, author_verified, body, parent_id, repost_of_id, created_at |
 | `posts.media` | id, post_id, media_url, media_type, position |
 | `posts.link_previews` | id, post_id, url, title, description, image_url |
 | `posts.hashtags` | post_id, tag |
@@ -275,24 +270,18 @@ The SYSTEM admin role is seeded at database initialization and cannot be created
 
 ## Module event and query map
 
-### auth
-
-- **Publishes:** `auth.user_registered`
-- **Queries exposed:** none (other modules use JWT middleware)
-
 ### users
 
-- **Subscribes:** `auth.user_registered` → creates default profile
-- **Publishes:** `users.followed`, `users.unfollowed`, `users.profile_updated`
+- **Publishes:** `users.registered`, `users.followed`, `users.unfollowed`, `users.profile_updated`
 - **Queries exposed:** `users.GetProfile`, `users.GetProfiles`, `users.GetFollowing`
 
 ### posts
 
-- **Subscribes:** `users.profile_updated` → updates denormalized author data (username, display name, avatar) across all posts by that user
+- **Subscribes:** `users.profile_updated` → updates denormalized author data (username, display name, avatar, verified) across all posts by that user
 - **Publishes:** `posts.created`, `posts.liked`, `posts.reposted`, `posts.deleted`
 - **Queries exposed:** `posts.GetByIDs`, `posts.GetByAuthor`, `posts.GetThread`
 
-**Denormalization:** Posts store a snapshot of author data (username, display_name, avatar_url) at creation time. This eliminates cross-module queries when rendering feeds. Author data is kept in sync via the `users.profile_updated` event.
+**Denormalization:** Posts store a snapshot of author data (username, display_name, avatar_url, verified) at creation time. This eliminates cross-module queries when rendering feeds. Author data is kept in sync via the `users.profile_updated` event.
 
 ### feed
 
@@ -329,20 +318,15 @@ REST API under `/api/v1/`. All responses are JSON. Auth via JWT in the `Authoriz
 
 **Swagger:** Every endpoint handler must include `swaggo/swag` annotations (`@Summary`, `@Description`, `@Tags`, `@Param`, `@Success`, `@Failure`, `@Router`). Run `make swagger` to regenerate. Swagger UI is served at `/swagger/index.html`.
 
-### auth
+### users (auth + profiles + follows)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/auth/register` | Register with email+password |
+| POST | `/auth/register` | Register with email+password (creates credentials + profile) |
 | POST | `/auth/login` | Login, returns JWT + refresh token |
 | POST | `/auth/refresh` | Refresh access token |
 | POST | `/auth/oauth/:provider` | OAuth login/register |
 | POST | `/auth/logout` | Invalidate session |
-
-### users
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
 | GET | `/users/:username` | Get user profile |
 | PUT | `/users/me` | Update own profile |
 | POST | `/users/:username/follow` | Follow user |
@@ -393,16 +377,18 @@ REST API under `/api/v1/`. All responses are JSON. Auth via JWT in the `Authoriz
 | POST | `/users/:username/mute` | Mute user |
 | DELETE | `/users/:username/mute` | Unmute user |
 
-### admin (requires SYSTEM role)
+### admin (requires moderator or admin role)
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/admin/reports` | List pending reports (paginated) |
-| PUT | `/admin/reports/:id` | Resolve report (dismiss, warn, ban) |
-| POST | `/admin/users/:username/ban` | Ban user |
-| DELETE | `/admin/users/:username/ban` | Unban user |
-| POST | `/admin/users/:username/suspend` | Temporarily suspend user |
-| DELETE | `/admin/posts/:id` | Admin delete any post |
+| Method | Endpoint | Description | Min role |
+|--------|----------|-------------|----------|
+| GET | `/admin/reports` | List pending reports (paginated) | moderator |
+| PUT | `/admin/reports/:id` | Resolve report (dismiss, warn) | moderator |
+| DELETE | `/admin/posts/:id` | Delete any post | moderator |
+| POST | `/admin/users/:username/suspend` | Temporarily suspend user | moderator |
+| POST | `/admin/users/:username/ban` | Ban user | admin |
+| DELETE | `/admin/users/:username/ban` | Unban user | admin |
+| PUT | `/admin/users/:username/role` | Promote/demote to moderator | admin |
+| PUT | `/admin/users/:username/verify` | Set/unset verified flag | admin |
 
 ### search
 
@@ -421,7 +407,7 @@ REST API under `/api/v1/`. All responses are JSON. Auth via JWT in the `Authoriz
 ### Email + password
 
 - Passwords hashed with bcrypt
-- JWT access tokens (short-lived, ~15 min) + refresh tokens (longer-lived, stored in `auth.sessions`)
+- JWT access tokens (short-lived, ~15 min) + refresh tokens (longer-lived, stored in `users.sessions`). JWT payload includes role and verified status.
 - Refresh token rotation — each use issues a new refresh token and invalidates the old one
 
 ### OAuth
@@ -456,7 +442,7 @@ The SPA is a fully independent Vite build that only communicates via `/api/v1/*`
 - **Search results** — posts, users, hashtags tabs
 - **Notifications** — activity feed
 - **Settings** — profile edit, account management, blocked/muted users
-- **Admin** — report review queue, user management (ban, suspend), content moderation actions. Only visible to users with SYSTEM admin role.
+- **Admin** — moderators see report review queue and content moderation actions. Admins additionally see user management (ban, promote/demote, verify). Role-gated visibility.
 - **Auth** — login, register, OAuth
 
 ### WebSocket

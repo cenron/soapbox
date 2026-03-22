@@ -16,7 +16,7 @@ This is a collaborative project with strict module dependencies. Violating the b
 
 2. **NEVER start a module whose dependencies are not marked `complete`.** If the plan says module X depends on module Y, and Y is not `complete`, you CANNOT work on X. Period. Do not ask "can I just start the parts that don't need Y?" No. Do not ask "can I stub it out?" No. Do not rationalize your way around this. The answer is no.
 
-3. **NEVER modify another module's code.** You are working on auth? Do not touch `internal/modules/users/`. You are working on feed? Do not touch `internal/modules/posts/`. Each module is owned by whoever is building it. If you need something from another module, it must already be exposed via the bus. If it isn't, you cannot work on this module yet.
+3. **NEVER modify another module's code.** You are working on users? Do not touch `internal/modules/posts/`. You are working on feed? Do not touch `internal/modules/posts/`. Each module is owned by whoever is building it. If you need something from another module, it must already be exposed via the bus. If it isn't, you cannot work on this module yet.
 
 4. **NEVER modify another module's event contracts.** The publisher owns the event schema. If you are consuming `posts.created` and it doesn't have a field you need, you do NOT add it. You stop and tell the user: "This module depends on a field that doesn't exist in the event contract. The posts module owner needs to add it."
 
@@ -148,8 +148,7 @@ soapbox/
 │   │   ├── httpkit/             # Response helpers, middleware, pagination
 │   │   └── types/               # Common types (IDs, timestamps)
 │   └── modules/                 # Feature modules (isolated, communicate via bus)
-│       ├── auth/                # Auth module (credentials, sessions, roles, OAuth)
-│       ├── users/               # Users module (profiles, follows)
+│       ├── users/               # Users module (auth, profiles, follows)
 │       ├── posts/               # Posts module (posts, likes, reposts, hashtags, link previews)
 │       ├── feed/                # Feed module (timeline assembly)
 │       ├── notifications/       # Notifications module

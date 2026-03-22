@@ -73,23 +73,31 @@ This document is the single source of truth for what to build, in what order, an
 
 ---
 
-## Phase 1: Core modules (sequential — each depends on the previous)
+## Phase 1: Core module
 
-### Module: auth
-> Branch: `feat/auth`
+### Module: users (auth + profiles + follows)
+> Branch: `feat/users`
 > Dependencies: Phase 0 complete
 
-**Backend:**
-- [ ] `auth` schema migrations (credentials, oauth_links, sessions, roles)
-- [ ] Seed SYSTEM admin role at migration time
-- [ ] Registration endpoint (email + password, bcrypt hashing)
+**Backend — auth:**
+- [ ] `users` schema migrations (credentials, oauth_links, sessions, roles, profiles, follows)
+- [ ] Seed admin role at migration time
+- [ ] Registration endpoint (email + password, bcrypt hashing, creates profile in same transaction)
 - [ ] Login endpoint (JWT access token + refresh token in httpOnly cookie)
 - [ ] Refresh endpoint (token rotation)
 - [ ] Logout endpoint (session invalidation)
 - [ ] OAuth flow (Google, GitHub, Apple)
-- [ ] JWT middleware (validate token, inject user context with role)
-- [ ] Role-based middleware (admin route protection)
-- [ ] Publish `auth.user_registered` event
+- [ ] JWT middleware (validate token, inject user context with role and verified status)
+- [ ] Role-based middleware (moderator and admin route protection, hierarchy check)
+
+**Backend — profiles & follows:**
+- [ ] Get profile endpoint
+- [ ] Update own profile endpoint (display name, bio, avatar URL)
+- [ ] Follow / unfollow endpoints
+- [ ] Followers / following list endpoints
+- [ ] Publish `users.registered`, `users.followed`, `users.unfollowed`, `users.profile_updated` events
+- [ ] Expose queries: `users.GetProfile`, `users.GetProfiles`, `users.GetFollowing`
+- [ ] Search: username and display name search handler (for search module to query)
 - [ ] Swagger annotations on all endpoints
 - [ ] Unit and integration tests
 
@@ -99,29 +107,6 @@ This document is the single source of truth for what to build, in what order, an
 - [ ] OAuth buttons
 - [ ] Auth state integration with app shell (logged in/out states, nav updates)
 - [ ] Protected route wrapper using auth context
-- [ ] Frontend tests
-
-**Status:** `pending`
-**Owner:** —
-
-### Module: users
-> Branch: `feat/users`
-> Dependencies: auth `complete`
-
-**Backend:**
-- [ ] `users` schema migrations (profiles, follows)
-- [ ] Subscribe to `auth.user_registered` → create default profile
-- [ ] Get profile endpoint
-- [ ] Update own profile endpoint (display name, bio, avatar URL)
-- [ ] Follow / unfollow endpoints
-- [ ] Followers / following list endpoints
-- [ ] Publish `users.followed`, `users.unfollowed`, `users.profile_updated` events
-- [ ] Expose queries: `users.GetProfile`, `users.GetProfiles`, `users.GetFollowing`
-- [ ] Search: username and display name search handler (for search module to query)
-- [ ] Swagger annotations on all endpoints
-- [ ] Unit and integration tests
-
-**Frontend:**
 - [ ] Profile page (user info, posts tab, likes tab, followers/following lists)
 - [ ] Profile edit / settings page
 - [ ] Follow/unfollow button component
@@ -259,8 +244,9 @@ This document is the single source of truth for what to build, in what order, an
 - [ ] Block / unblock endpoints
 - [ ] Mute / unmute endpoints
 - [ ] Report endpoint (user or post)
-- [ ] Admin endpoints: list reports, resolve report, ban/unban user, suspend user, admin delete post
-- [ ] Admin middleware (SYSTEM role check)
+- [ ] Moderator endpoints: list reports, resolve report, delete any post, temp suspend user (requires moderator role)
+- [ ] Admin endpoints: ban/unban user, promote/demote moderator, set/unset verified flag (requires admin role)
+- [ ] Role-based middleware checks (moderator vs admin tier)
 - [ ] Expose queries: `moderation.GetBlockList`, `moderation.GetMuteList`
 - [ ] Swagger annotations on all endpoints
 - [ ] Unit and integration tests
@@ -269,7 +255,8 @@ This document is the single source of truth for what to build, in what order, an
 - [ ] Block / mute buttons on user profiles and post cards
 - [ ] Report modal
 - [ ] Blocked / muted users list in settings
-- [ ] Admin panel: report review queue, user management actions
+- [ ] Moderator panel: report review queue, content moderation actions
+- [ ] Admin panel: user management (ban, promote/demote, verify), visible only to admins
 - [ ] Frontend tests
 
 **Status:** `pending`
@@ -322,8 +309,7 @@ This document is the single source of truth for what to build, in what order, an
 ```mermaid
 graph TD
     P0A[Phase 0A: Backend Foundation] --> P0B[Phase 0B: Frontend Foundation]
-    P0B --> AUTH[auth]
-    AUTH --> USERS[users]
+    P0B --> USERS[users]
     USERS --> MEDIA[media]
     USERS --> MOD[moderation]
     MEDIA --> POSTS[posts]
@@ -340,7 +326,7 @@ graph TD
 
 ## Parallelization windows
 
-After the sequential foundation (Phase 0 → auth → users), work fans out:
+After the sequential foundation (Phase 0 → users), work fans out:
 
 | Window | Developer A | Developer B |
 |--------|-------------|-------------|
