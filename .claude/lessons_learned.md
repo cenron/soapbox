@@ -41,3 +41,23 @@
 ## [2026-03-22] Goose splits dollar-quoted PL/pgSQL blocks on semicolons
 **What happened:** A `DO $$ ... $$;` block in a goose SQL migration failed with "unterminated dollar-quoted string" because goose splits statements on `;` by default, breaking the block mid-body.
 **Takeaway:** Wrap PL/pgSQL blocks (DO, CREATE FUNCTION, etc.) with `-- +goose StatementBegin` / `-- +goose StatementEnd` so goose treats them as a single statement.
+
+## [2026-03-22] Don't use DEFAULT gen_random_uuid() when app generates UUIDv7
+**What happened:** Migrations used `DEFAULT gen_random_uuid()` (v4) but the Go app uses `types.NewID()` which produces v7. This creates two populations of IDs with different ordering properties, breaking cursor pagination assumptions. Also, `gen_random_uuid()` requires pgcrypto on older Postgres versions.
+**Takeaway:** When the app always supplies IDs (e.g., UUIDv7), omit the `DEFAULT` clause entirely. Let the NOT NULL + PRIMARY KEY constraint enforce that the app provides the ID.
+
+## [2026-03-22] Never store raw refresh tokens — hash them
+**What happened:** PR review flagged that storing plaintext refresh tokens means a database compromise leaks replayable tokens.
+**Takeaway:** Store SHA-256 hashes of refresh tokens. The column should be `refresh_token_hash`, not `refresh_token`. Hash on write, hash on lookup. Same pattern as API keys.
+
+## [2026-03-22] Seed migrations must be environment-guarded
+**What happened:** A seed migration that creates a dev admin account with a well-known password would run in production since goose migrations are unconditional.
+**Takeaway:** Guard seed migrations with `current_setting('app.env')` check. Default to `'development'` if unset. Skip with a NOTICE log in non-dev environments. Alternatively, use a separate seed script outside the migration system.
+
+## [2026-03-22] Skeleton stubs must fail loudly, not pass silently
+**What happened:** Middleware stubs called `next.ServeHTTP(w, r)` without any auth check, meaning accidentally wiring them into routes would create open endpoints. Password stubs returned generic "not implemented" errors with no function context.
+**Takeaway:** Skeleton middleware stubs should return 401/403. Skeleton function stubs should either be implemented or return errors that identify which function is unimplemented. Never let a stub silently succeed — it masks integration bugs.
+
+## [2026-03-22] golangci-lint gocritic requires named results when both returns are the same type
+**What happened:** `func VerifiedFrom(ctx) (bool, bool)` triggered `unnamedResult` lint error. Then `(verified bool, ok bool)` triggered `paramTypeCombine`. And named returns require `=` not `:=` in the body.
+**Takeaway:** When returning two values of the same type, use combined named results: `(verified, ok bool)` and assign with `=` not `:=`.
