@@ -33,7 +33,7 @@ This document is the single source of truth for what to build, in what order, an
 
 ### Phase 0A: Backend foundation
 - [ ] Go module init (`go mod init`)
-- [ ] Project directory structure (`cmd/`, `internal/shared/`, `internal/<modules>/`, `build/`)
+- [ ] Project directory structure (`cmd/`, `internal/core/`, `internal/<modules>/`, `build/`)
 - [ ] Docker Compose for dev infra (Postgres, MinIO, Mailpit)
 - [ ] Dockerfile + `entrypoint.sh` with APP_MODE pattern
 - [ ] Shared DB package: connection pool, schema-per-module migration runner, transaction helpers
@@ -43,13 +43,13 @@ This document is the single source of truth for what to build, in what order, an
 - [ ] Shared HTTP package: router setup, response helpers, error formatting, pagination helpers
 - [ ] Shared types package: ID types, timestamps, pagination params
 - [ ] Module interface: `Load()` function contract that each module implements
-- [ ] `cmd/web/main.go` composition root: init shared services, start HTTP server
+- [ ] `cmd/web/main.go` composition root: init core services, start HTTP server
 - [ ] Makefile targets: build, run, test, lint, docker-up, docker-down
 - [ ] `.env.example` with all config vars
 - [ ] Testing infrastructure: test helpers, database test utilities, bus test mocks
 - [ ] Air config for hot reload
 
-**Status:** `pending`
+**Status:** `complete`
 **Owner:** —
 **Branch:** `phase/bootstrap`
 
@@ -90,6 +90,7 @@ This document is the single source of truth for what to build, in what order, an
 - [ ] JWT middleware (validate token, inject user context with role)
 - [ ] Role-based middleware (admin route protection)
 - [ ] Publish `auth.user_registered` event
+- [ ] Swagger annotations on all endpoints
 - [ ] Unit and integration tests
 
 **Frontend:**
@@ -117,6 +118,7 @@ This document is the single source of truth for what to build, in what order, an
 - [ ] Publish `users.followed`, `users.unfollowed`, `users.profile_updated` events
 - [ ] Expose queries: `users.GetProfile`, `users.GetProfiles`, `users.GetFollowing`
 - [ ] Search: username and display name search handler (for search module to query)
+- [ ] Swagger annotations on all endpoints
 - [ ] Unit and integration tests
 
 **Frontend:**
@@ -143,6 +145,7 @@ This document is the single source of truth for what to build, in what order, an
 - [ ] Presigned upload URL endpoint
 - [ ] Upload status tracking
 - [ ] Expose queries: `media.GetUploadURL`, `media.GetByIDs`
+- [ ] Swagger annotations on all endpoints
 - [ ] Unit and integration tests
 
 **Frontend:**
@@ -171,6 +174,7 @@ This document is the single source of truth for what to build, in what order, an
 - [ ] Publish `posts.created`, `posts.liked`, `posts.reposted`, `posts.deleted` events
 - [ ] Expose queries: `posts.GetByIDs`, `posts.GetByAuthor`, `posts.GetThread`
 - [ ] Search: full-text search on post body, hashtag matching handler
+- [ ] Swagger annotations on all endpoints
 - [ ] Unit and integration tests
 
 **Frontend:**
@@ -201,6 +205,7 @@ This document is the single source of truth for what to build, in what order, an
 - [ ] Consume queries: `posts.GetByIDs`, `users.GetFollowing`
 - [ ] Expose queries: `feed.GetTimeline`
 - [ ] WebSocket: implement server-side "N new posts" push
+- [ ] Swagger annotations on all endpoints
 - [ ] Unit and integration tests
 
 **Frontend:**
@@ -228,6 +233,7 @@ This document is the single source of truth for what to build, in what order, an
 - [ ] Publish `notifications.new` event
 - [ ] WebSocket: push `new_notification` event to connected clients
 - [ ] Consume queries: `moderation.GetBlockList`, `moderation.GetMuteList` (filter notifications from blocked/muted users) — **if moderation is complete, otherwise defer filtering to a follow-up**
+- [ ] Swagger annotations on all endpoints
 - [ ] Unit and integration tests
 
 **Frontend:**
@@ -256,6 +262,7 @@ This document is the single source of truth for what to build, in what order, an
 - [ ] Admin endpoints: list reports, resolve report, ban/unban user, suspend user, admin delete post
 - [ ] Admin middleware (SYSTEM role check)
 - [ ] Expose queries: `moderation.GetBlockList`, `moderation.GetMuteList`
+- [ ] Swagger annotations on all endpoints
 - [ ] Unit and integration tests
 
 **Frontend:**
@@ -277,6 +284,7 @@ This document is the single source of truth for what to build, in what order, an
 - [ ] `/search` endpoint with `type` parameter routing
 - [ ] Consume queries: `moderation.GetBlockList`, `moderation.GetMuteList` (filter results) — **if moderation is complete, otherwise defer filtering**
 - [ ] Postgres full-text search indexes on posts.body and users.username/display_name
+- [ ] Swagger annotations on all endpoints
 - [ ] Unit and integration tests
 
 **Frontend:**

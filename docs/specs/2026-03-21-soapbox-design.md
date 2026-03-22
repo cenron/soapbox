@@ -43,7 +43,7 @@ A Twitter clone with pre-2022 feel. Chronological feed, no algorithmic manipulat
 
 | Layer | Technology |
 |-------|-----------|
-| Backend | Go (modular monolith) |
+| Backend | Go (modular monolith), chi, sqlx, pgx, goose |
 | Frontend | React + Vite + shadcn/ui + Tailwind CSS |
 | State management | TanStack Query (server state) + React built-ins (client state) |
 | Database | PostgreSQL 16 (schema-per-module) |
@@ -58,7 +58,7 @@ graph TB
     subgraph "cmd/web — single binary"
         MAIN[main.go<br/>Composition Root]
 
-        subgraph "Shared Layer"
+        subgraph "Core Layer"
             BUS[Bus Interface<br/>Event + Query]
             REG[Registry Interface]
             CACHE[Cache Interface]
@@ -87,7 +87,7 @@ graph TB
 
 ### Dependency rule
 
-`cmd/ → modules → shared/`. Modules never import each other. Modules never import upward into `cmd/`.
+`cmd/ → modules → core/`. Modules never import each other. Modules never import upward into `cmd/`.
 
 ### Project structure
 
@@ -97,12 +97,12 @@ soapbox/
 │   └── web/
 │       └── main.go              # Wires all modules (only entry point for now)
 ├── internal/
-│   ├── shared/
+│   ├── core/
 │   │   ├── bus/                 # Bus interface + in-memory implementation
 │   │   ├── registry/            # Registry interface + in-memory implementation
 │   │   ├── cache/               # Cache interface + in-memory implementation
-│   │   ├── db/                  # Connection pool, migration runner, transaction helpers
-│   │   ├── http/                # Response writers, error formatting, pagination, middleware
+│   │   ├── db/                  # sqlx connection, migration runner, transaction helpers
+│   │   ├── httpkit/             # Response writers, error formatting, pagination, middleware
 │   │   └── types/               # Common types (IDs, timestamps, pagination params)
 │   ├── auth/
 │   ├── users/
@@ -121,11 +121,11 @@ soapbox/
 
 ### Composition root
 
-The `cmd/web/main.go` is a thin wiring layer. It initializes shared infrastructure and loads modules:
+The `cmd/web/main.go` is a thin wiring layer. It initializes core infrastructure and loads modules:
 
 ```go
 func main() {
-    shared.Init() // DB, bus, registry, cache, config, HTTP server
+    core.Init() // DB, bus, registry, cache, config, HTTP server
 
     auth.Load()
     users.Load()
@@ -135,7 +135,7 @@ func main() {
     media.Load()
     moderation.Load()
 
-    shared.Start() // Starts the HTTP server
+    core.Start() // Starts the HTTP server
 }
 ```
 
@@ -161,7 +161,7 @@ For now only `cmd/web/` exists. Future entry points (e.g., `cmd/admin/`, `cmd/co
 
 ## Communication layer
 
-The shared layer provides abstracted interfaces for all inter-module communication. Modules only interact with interfaces, never implementations. Swapping an implementation is a one-line change in `main.go`.
+The core layer provides abstracted interfaces for all inter-module communication. Modules only interact with interfaces, never implementations. Swapping an implementation is a one-line change in `main.go`.
 
 ### Bus interface
 
@@ -326,6 +326,8 @@ The search interface is abstract enough to swap Postgres full-text for OpenSearc
 ## API design
 
 REST API under `/api/v1/`. All responses are JSON. Auth via JWT in the `Authorization` header. Cursor-based pagination using `?cursor=&limit=` on list endpoints.
+
+**Swagger:** Every endpoint handler must include `swaggo/swag` annotations (`@Summary`, `@Description`, `@Tags`, `@Param`, `@Success`, `@Failure`, `@Router`). Run `make swagger` to regenerate. Swagger UI is served at `/swagger/index.html`.
 
 ### auth
 
