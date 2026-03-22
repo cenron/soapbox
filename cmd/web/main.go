@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"net/http"
 	"os"
@@ -21,6 +22,7 @@ import (
 	"github.com/radni/soapbox/internal/core/db"
 	"github.com/radni/soapbox/internal/core/httpkit"
 	"github.com/radni/soapbox/internal/core/registry"
+	"github.com/radni/soapbox/web"
 )
 
 // @title           Soapbox API
@@ -72,6 +74,16 @@ func main() {
 	// Future: load modules here
 	// auth.Load(core.ModuleDeps{...})
 	// users.Load(core.ModuleDeps{...})
+
+	// Serve SPA in production — skip when running behind Vite dev server
+	if cfg.Server.IsProd() {
+		staticFS, fsErr := fs.Sub(web.StaticFiles, "dist")
+		if fsErr != nil {
+			logger.Error("failed to create sub filesystem for SPA", "error", fsErr)
+			os.Exit(1)
+		}
+		server.Router.NotFound(httpkit.SPAHandler(staticFS))
+	}
 
 	errCh := make(chan error, 1)
 	go func() {

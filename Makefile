@@ -1,16 +1,16 @@
-.PHONY: build run test lint swagger docker-up docker-down
+.PHONY: build run test lint swagger docker-up docker-down web-install web-dev web-build web-test web-lint
 
-build: swagger
+build: web-build swagger
 	go build -o bin/web ./cmd/web
 
 run: swagger
 	@test -x $$(go env GOPATH)/bin/air || { echo "air not found. Install it: go install github.com/air-verse/air@latest"; exit 1; }
 	$$(go env GOPATH)/bin/air
 
-test:
+test: web-test
 	go test ./...
 
-lint:
+lint: web-lint
 	@test -x $$(go env GOPATH)/bin/golangci-lint || { echo "golangci-lint not found. Install it: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest"; exit 1; }
 	$$(go env GOPATH)/bin/golangci-lint run ./...
 
@@ -23,3 +23,18 @@ docker-up:
 
 docker-down:
 	docker compose down
+
+web-install:
+	cd web && npm install
+
+web-dev:
+	cd web && npm run dev
+
+web-build:
+	cd web && npm run build
+
+web-test:
+	cd web && npm test
+
+web-lint:
+	cd web && npm run lint
