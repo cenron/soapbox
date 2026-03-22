@@ -89,3 +89,51 @@
 ## [2026-03-22] @hey-api/openapi-ts bundles client-fetch since v0.73.0
 **What happened:** Installing `@hey-api/client-fetch` separately triggered a deprecation warning — it's been bundled into `@hey-api/openapi-ts` since v0.73.0.
 **Takeaway:** Only install `@hey-api/openapi-ts` (pinned with `-E`). The client runtime is included. Don't add `@hey-api/client-fetch` as a separate dependency.
+
+## [2026-03-22] React Router v7 does not match literal `@` before route params
+**What happened:** Route `/@:username` never matched URLs like `/@alice` — `matchPath("/@:username", "/@alice")` returns `null`. The catch-all `*` route fired instead, showing a 404 page. All E2E tests passed because they used `page.goto()` which bypasses client-side routing.
+**Takeaway:** Use `/:username` instead of `/@:username` in React Router v7. The `@` becomes part of the captured param — strip it with `.replace(/^@/, "")` in the component. React Router's ranked routing ensures static paths (`/login`, `/settings`) still take priority over the dynamic segment. Always add a unit test for non-trivial route patterns using `matchPath()` or `matchRoutes()`.
+
+## [2026-03-22] Swagger apiKey security type does not add Bearer prefix
+**What happened:** `@securityDefinitions.apikey BearerAuth` in swaggo generates `{ type: "apiKey", name: "Authorization" }`. The hey-api generated client sends the raw token as the header value without `Bearer ` prefix. The Go backend middleware expects `Authorization: Bearer <token>`, so all authenticated requests returned 401.
+**Takeaway:** When using swaggo's `apikey` security definition (Swagger 2.0 limitation), the frontend auth callback must prepend `Bearer ` to the token: `auth: () => token ? \`Bearer ${token}\` : ""`. Add a unit test that verifies the actual `Authorization` header value on outgoing fetch requests, not just the auth callback's return value.
+
+## [2026-03-22] E2E tests must click through the UI, not navigate directly to URLs
+**What happened:** E2E tests used `page.goto("/@admin")` to reach the profile page. This loads `index.html` from the backend's SPA handler but never exercises React Router's client-side route matching. The profile route was broken (`/@:username` doesn't match in RR v7) but all E2E tests passed because `goto()` bypasses the router entirely.
+**Takeaway:** E2E tests for internal pages must navigate by clicking links and buttons — the way a real user would. Use `page.goto()` only for the initial entry point (login page, home page). Every subsequent page transition must happen through UI interaction. This tests the full stack: link `href` generation, React Router matching, component rendering, and API calls.
+
+## [2026-03-22] Always kill existing services before starting new ones
+**What happened:** Multiple `make run` / `./bin/web` instances were spawned without killing previous ones, causing port conflicts and stale builds being served during Playwright MCP testing. Tests passed against old code while new bugs went undetected.
+**Takeaway:** Before starting any service, always run `lsof -ti :5173,:8080,:3000 | xargs kill 2>/dev/null; sleep 1`. This applies to all contexts: unit tests, E2E tests, Playwright MCP manual testing, rebuilds. No exceptions.
+
+## [2026-03-22] Public endpoints with viewer-relative fields need @Security in swagger
+**What happened:** `GET /users/{username}` returned `is_following: false` for authenticated users because the swagger annotation had no `@Security BearerAuth`. The generated client didn't send the auth token on this "public" endpoint, so the backend's `AuthOptional` middleware never received the JWT.
+**Takeaway:** Any endpoint that uses `AuthOptional` middleware (public but returns viewer-relative fields like `is_following`) must have `@Security BearerAuth` in its swagger annotation. Without it, the generated client won't send the auth token.
+
+## [2026-03-22] FollowButton must invalidate queries on error, not just on success
+**What happened:** When the follow API returned 409 "already following", the FollowButton showed the error but didn't refetch the profile. The button stayed as "Follow" even though the user was actually following — stale `is_following: false` persisted because only `onSuccess` triggered query invalidation.
+**Takeaway:** Mutation error handlers should invalidate queries to sync UI with server state, not just display the error message. A 409 "already following" means the server state differs from what the UI shows.
+
+## [2026-03-22] Playwright E2E selectors must be scoped and verified against actual DOM
+**What happened:** Multiple test failures from: (1) `getByRole("heading")` for shadcn `CardTitle` which renders as `<div>`, not `<h1>`; (2) `getByText("Sign up")` matching two elements (nav bar + login form); (3) `getByText("Followers")` matching both stat label and tab button.
+**Takeaway:** Always verify element roles against actual component source — shadcn components often don't render semantic HTML elements. Scope selectors to landmarks: `page.getByRole("banner").getByRole("link", ...)`. Use `{ exact: true }` when text appears as substring of other elements.
+
+## [2026-03-22] Set up Playwright response listeners BEFORE the triggering action
+**What happened:** `page.waitForResponse()` was called after `button.click()`. The response fired before the listener was attached, causing the test to hang until timeout.
+**Takeaway:** Always set up `page.waitForResponse()` (or `page.waitForRequest()`) before the action that triggers the network call. Pattern: `const promise = page.waitForResponse(...)` then `await button.click()` then `const res = await promise`.
+
+## [2026-03-22] Webkit drops in-memory auth tokens after page.goto() under concurrency
+**What happened:** Follow test POST returned 401 on webkit when 3 browsers ran in parallel. The in-memory access token was lost after `page.goto("/@admin")` because webkit's full navigation remounts the SPA. The `refreshAccessToken()` call on mount was slow under concurrent load and the follow button was clicked before auth settled.
+**Takeaway:** After `page.goto()` in E2E tests, always `await page.waitForLoadState("networkidle")` before interacting with authenticated features. This ensures the token refresh completes. Also enable `retries: 1` locally in playwright.config.ts to handle transient webkit timing issues.
+
+## [2026-03-22] Use unique test users for E2E tests that mutate shared state
+**What happened:** Follow/unfollow tests used the shared seed user `testuser`. When 3 browsers ran in parallel, they raced on the same follow state — one browser's follow conflicted with another's unfollow, causing 409 errors and stale UI.
+**Takeaway:** Add a `registerAndLogin(page, prefix)` helper that creates a unique user per test run (timestamp-based). Use it for any test that mutates shared state (follow, post, block). Use `{ exact: true }` on button selectors to avoid matching usernames that start with the button label (e.g., "Follow" matching "F @follow_123").
+
+## [2026-03-22] Nav items behind auth must be hidden when logged out
+**What happened:** Sidebar showed Notifications, Profile, and Settings links to unauthenticated users. Clicking them either redirected to login or showed broken pages.
+**Takeaway:** Use an `authOnly` flag on nav items and filter them based on auth state. Test both states in E2E: verify auth-only items are hidden when logged out and visible when logged in.
+
+## [2026-03-22] Sequential browser projects don't fix webkit auth flakes — keep parallel
+**What happened:** Tried splitting user module tests into sequential browser projects (chromium → firefox → webkit via `dependencies`) to fix webkit 401s on follow. It didn't help — the root cause is webkit's slower token refresh after `page.goto()`, not browser concurrency. Sequential runs nearly doubled test time (14s → 23s) with no reliability gain.
+**Takeaway:** Keep `fullyParallel: true`. Fix webkit flakes with: (1) unique users via `registerAndLogin()`, (2) `waitForLoadState("networkidle")` after `goto()`, (3) verify auth-only UI is visible before clicking authenticated features, (4) `retries: 1` locally. Don't add complexity that doesn't solve the problem.

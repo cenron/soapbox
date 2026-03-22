@@ -174,6 +174,7 @@ func (h *Handler) handleLogout(w http.ResponseWriter, r *http.Request) {
 // @Summary      Get user profile
 // @Description  Retrieve a user's profile by username. If authenticated, includes whether the viewer follows this user.
 // @Tags         users
+// @Security     BearerAuth
 // @Produce      json
 // @Param        username path string true "Username"
 // @Success      200 {object} ProfileResponse

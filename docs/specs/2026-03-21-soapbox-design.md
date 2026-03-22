@@ -223,9 +223,9 @@ Single Postgres instance. Each module owns its own schema. No cross-schema forei
 |-------|---------|
 | `users.credentials` | id, user_id, email, password_hash, created_at |
 | `users.oauth_links` | id, user_id, provider, provider_id, created_at |
-| `users.sessions` | id, user_id, refresh_token, expires_at, created_at |
+| `users.sessions` | id, user_id, refresh_token_hash, expires_at, created_at |
 | `users.roles` | id, user_id, role, created_at |
-| `users.profiles` | id, username, display_name, bio, avatar_url, verified, created_at |
+| `users.profiles` | id, username, display_name, bio, avatar_url, verified, created_at, updated_at |
 | `users.follows` | follower_id, following_id, created_at |
 
 Roles follow a simple hierarchy: (default user) < moderator < admin. Users with no role row are regular users. The admin role is seeded at database initialization. Moderators are promoted by admins via the API. The JWT payload includes the user's role and verified status for frontend and backend authorization checks. Registration creates credentials and a default profile in a single transaction.

@@ -180,6 +180,37 @@ Every HTTP handler that serves an API endpoint **must** include `swaggo/swag` an
   - APIs: make real requests to confirm the response is correct.
 - Only update a test when you have confirmed the new behavior is genuinely correct and the test expectation was wrong or outdated.
 
+## CRITICAL: Kill existing services before starting new ones
+
+**Before starting any service (web server, dev server, `make run`, `./bin/web`, etc.), you MUST first check for and kill any existing instances.** This applies to ALL contexts: running tests, manual testing, Playwright MCP browser testing, rebuilds — every time.
+
+```bash
+# Always run this before starting any service:
+lsof -ti :5173,:8080,:3000 | xargs kill 2>/dev/null; sleep 1
+```
+
+Failing to do this causes port conflicts, stale builds being served, and test results that don't reflect the latest code. **No exceptions.**
+
+## MANDATORY: Playwright MCP user journey validation
+
+**Before considering any frontend module complete, you MUST run a full user journey test using the Playwright MCP server.** This is not optional. Automated E2E tests alone are not sufficient — you must manually walk through every feature as a real user would.
+
+### Rules — no exceptions:
+
+1. **NEVER use `browser_navigate` to reach internal pages.** You may navigate to `http://localhost:8080` once as the entry point. After that, every page transition must happen by clicking links, buttons, and menu items using `browser_click`. If you can't reach a page by clicking, that's a bug.
+
+2. **Test EVERY feature the module provides.** Registration, login, logout, profile viewing, profile editing, following, unfollowing, settings — every user-facing feature must be exercised. Don't skip features because "the E2E tests cover it."
+
+3. **Interact like a real user.** Fill forms with `browser_fill_form`, click buttons with `browser_click`, open dropdowns, switch tabs, hover over elements. If a real user would click it, you click it.
+
+4. **Verify API responses via network requests.** After key actions (save, follow, login, logout), check `browser_network_requests` to confirm the API returned success (2xx). Don't trust the UI alone — it can show stale/cached data.
+
+5. **Test both happy path and edge cases.** Try saving an empty form. Try following someone you already follow. Try accessing a protected page while logged out. Try navigating back to a page you just left.
+
+6. **Log every bug you find.** If something doesn't work, note the exact steps, what you expected, and what actually happened. Then fix it before moving on.
+
+7. **Kill existing services first.** Before starting any service for testing, run: `lsof -ti :5173,:8080,:3000 | xargs kill 2>/dev/null; sleep 1`
+
 ## Verification loop
 
 Before considering any task complete:
@@ -216,7 +247,7 @@ Don't just run the steps — prove it works. Ask: "Would a staff engineer approv
 
 1. **Run all tests** — `make test`. Every test must pass. No exceptions.
 2. **Run linter** — `make lint`. Zero warnings, zero errors.
-3. **Run typecheck** — frontend: `npx tsc --noEmit`, backend: `go vet ./...`.
+3. **Run typecheck** — frontend: `cd web && npx tsc --noEmit`, backend: `go vet ./...`. **This must pass with zero errors before running any other checks.** A type error in a test file is a real bug, not a nuisance — it means the test is asserting against a wrong contract.
 4. **Module boundary audit** — grep the entire module directory for imports of other `internal/` modules. If any exist, fix them before proceeding.
    ```bash
    # Backend: check for cross-module imports
@@ -233,7 +264,9 @@ Don't just run the steps — prove it works. Ask: "Would a staff engineer approv
 8. **Pattern consistency** — compare your module's patterns against existing completed modules. Error handling, response formatting, test structure, and file organization must match.
 9. **Design spec compliance** — verify your module implements all endpoints, events, and queries listed in `docs/specs/2026-03-21-soapbox-design.md` for this module. Nothing missing, nothing extra.
 10. **Plan status update** — update `docs/plan.md` to mark this module as `complete`.
-11. **E2E tests** — if this module includes frontend changes, check `docs/e2e-test-plan.md` for the corresponding phase. Write and pass ALL listed e2e tests before opening the PR. Run `make web-test-e2e` to verify. Mark the phase status as `complete` in the test plan.
+11. **E2E tests** — if this module includes frontend changes, check `docs/e2e-test-plan.md` for the corresponding phase. Write and pass ALL listed e2e tests before opening the PR. Run `make web-test-e2e` to verify. Mark the phase status as `complete` in the test plan. **Read the "MANDATORY: E2E testing policy" section in `docs/e2e-test-plan.md`** — tests must click through the UI (no `page.goto()` for internal pages) and assert API success, not just UI rendering.
+12. **Route matching tests** — if any new routes use dynamic segments or special characters, add a unit test using `matchRoutes()` that proves the pattern matches expected URLs.
+13. **Auth integration test** — if the module adds authenticated API calls, add a unit test that mocks `fetch` and verifies the `Authorization: Bearer <token>` header is sent.
 
 If any check fails, fix the issue and re-run ALL checks. Only create the PR when everything passes clean.
 

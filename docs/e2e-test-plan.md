@@ -20,7 +20,7 @@ All e2e tests live in `web/e2e/`. Run with `make web-test-e2e` or `cd web && npm
 
 ## Phase 1: Auth Module
 
-**Status:** `pending`
+**Status:** `complete` (OAuth and session-refresh tests deferred to post-MVP)
 
 | Test file | Journey | What it verifies |
 |-----------|---------|-----------------|
@@ -35,7 +35,7 @@ All e2e tests live in `web/e2e/`. Run with `make web-test-e2e` or `cd web && npm
 
 ## Phase 1: Users Module
 
-**Status:** `pending`
+**Status:** `complete`
 
 | Test file | Journey | What it verifies |
 |-----------|---------|-----------------|
@@ -139,6 +139,77 @@ All e2e tests live in `web/e2e/`. Run with `make web-test-e2e` or `cd web && npm
 
 ---
 
+## MANDATORY: E2E testing policy
+
+These rules exist because we shipped bugs that E2E tests should have caught. They are not optional.
+
+### 1. Click, don't navigate
+
+E2E tests must reach pages by **clicking links and buttons** — the way a real user does. `page.goto()` is allowed only for the initial entry point (e.g., login page). Every subsequent page transition must happen through UI interaction.
+
+**Why:** `page.goto()` bypasses React Router's client-side route matching. A broken route pattern (`/@:username` not matching in RR v7) was invisible to every E2E test because they all used `goto()` to reach the profile page. The 404 only appeared when a real user clicked a link.
+
+**Bad:**
+```ts
+await page.goto("/@admin")
+await expect(page.getByText("admin")).toBeVisible()
+```
+
+**Good:**
+```ts
+// Start at login, authenticate, then click through
+await page.goto("/login")
+await login(page, "admin@test.com", "password")
+await page.getByRole("link", { name: "Profile" }).click()
+await expect(page.getByText("admin")).toBeVisible()
+```
+
+### 2. Assert API responses, not just UI rendering
+
+Every E2E test that triggers an authenticated API call must verify the call succeeded. A page can render stale cached data or optimistic UI even when the API returned 401.
+
+**How:** Either:
+- Assert a success message appears (e.g., "Profile updated.")
+- Use `page.waitForResponse()` to verify the HTTP status
+- Assert the persisted result (navigate away and back to confirm data survived)
+
+**Bad:**
+```ts
+await page.getByRole("button", { name: "Save" }).click()
+// Test ends here — doesn't check if save actually worked
+```
+
+**Good:**
+```ts
+await page.getByRole("button", { name: "Save" }).click()
+await expect(page.getByText("Profile updated.")).toBeVisible()
+// Navigate to profile and verify the change persisted
+await page.getByRole("link", { name: "Profile" }).click()
+await expect(page.getByText("New bio text")).toBeVisible()
+```
+
+### 3. Every module phase must include route matching unit tests
+
+For any non-trivial route pattern (dynamic segments, special characters), add a unit test using `matchRoutes()` that proves the pattern matches expected URLs and doesn't match static routes.
+
+### 4. Every module phase must include an auth integration unit test
+
+At least one unit test must verify that authenticated API calls send the correct `Authorization: Bearer <token>` header. Mock `fetch` and inspect the headers — don't just test the config object.
+
+### 5. Typecheck must pass before E2E tests run
+
+`npx tsc --noEmit` must pass with zero errors before running `make web-test-e2e`. A type error in a test file (like a non-existent property on a response type) indicates a contract mismatch that could hide real bugs.
+
+### 6. Use unique test users for state-mutating tests
+
+Tests that mutate shared server state (follow/unfollow, create/delete posts, block/mute) must register a unique user per test run using `registerAndLogin(page, prefix)`. This prevents race conditions when multiple browsers run in parallel.
+
+### 7. Wait for auth to settle after page.goto()
+
+After any `page.goto()`, wait for `networkidle` AND verify auth-only UI elements are visible (e.g., Profile nav link) before interacting with authenticated features. Webkit's token refresh is slower — clicking before auth settles causes 401 errors.
+
+---
+
 ## How to maintain this plan
 
 1. **When starting a phase with frontend work**, check the test file column — create those test files as part of the module implementation.
@@ -146,3 +217,4 @@ All e2e tests live in `web/e2e/`. Run with `make web-test-e2e` or `cd web && npm
 3. **Add new rows** if you discover user journeys not covered here.
 4. **Never remove a passing test** — tests accumulate across phases.
 5. **All e2e tests must pass before opening a PR** — add `make web-test-e2e` to the pre-PR checklist.
+6. **Read the testing policy above** before writing any E2E test. Violations will ship bugs.

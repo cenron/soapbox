@@ -307,9 +307,11 @@ func (s *Store) CreateFollow(ctx context.Context, followerID, followingID types.
 func (s *Store) DeleteFollow(ctx context.Context, followerID, followingID types.ID) error {
 	const q = `DELETE FROM users.follows WHERE follower_id = $1 AND following_id = $2`
 
-	if _, err := s.db.Conn.ExecContext(ctx, q, followerID, followingID); err != nil {
+	_, err := s.db.Conn.ExecContext(ctx, q, followerID, followingID)
+	if err != nil {
 		return fmt.Errorf("store: delete follow: %w", err)
 	}
+
 	return nil
 }
 
@@ -409,7 +411,6 @@ func (s *Store) GetFollowingIDs(ctx context.Context, userID types.ID) ([]types.I
 	return ids, nil
 }
 
-// validateTimestampCursor checks that a cursor string is either empty or a valid RFC3339 timestamp.
 // escapeILIKE escapes ILIKE wildcard characters in user input.
 func escapeILIKE(s string) string {
 	s = strings.ReplaceAll(s, `\`, `\\`)
@@ -418,6 +419,7 @@ func escapeILIKE(s string) string {
 	return s
 }
 
+// validateTimestampCursor checks that a cursor string is either empty or a valid RFC3339 timestamp.
 func validateTimestampCursor(cursor string) error {
 	if cursor == "" {
 		return nil

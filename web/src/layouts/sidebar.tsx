@@ -6,17 +6,30 @@ import { Sheet, SheetContent, SheetTrigger } from "@/shared/ui/sheet"
 import { Separator } from "@/shared/ui/separator"
 import { cn } from "@/shared/lib/utils"
 
-const navItems = [
-  { label: "Home", to: "/" },
-  { label: "Search", to: "/search" },
-  { label: "Notifications", to: "/notifications" },
-  { label: "Profile", to: "/profile" },
-  { label: "Settings", to: "/settings" },
-]
+interface NavItem {
+  label: string
+  to: string
+  authOnly?: boolean
+}
+
+function useNavItems(): NavItem[] {
+  const { user } = useAuth()
+
+  const items: NavItem[] = [
+    { label: "Home", to: "/" },
+    { label: "Search", to: "/search" },
+    { label: "Notifications", to: "/notifications", authOnly: true },
+    { label: "Profile", to: user ? `/@${user.username}` : "/login", authOnly: true },
+    { label: "Settings", to: "/settings", authOnly: true },
+  ]
+
+  return items.filter((item) => !item.authOnly || user)
+}
 
 function NavLinks({ onClick }: { onClick?: () => void }) {
   const location = useLocation()
   const { user } = useAuth()
+  const navItems = useNavItems()
 
   return (
     <nav className="flex flex-col gap-1">

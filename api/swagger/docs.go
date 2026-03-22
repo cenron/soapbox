@@ -300,6 +300,11 @@ const docTemplate = `{
         },
         "/users/{username}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Retrieve a user's profile by username. If authenticated, includes whether the viewer follows this user.",
                 "produces": [
                     "application/json"

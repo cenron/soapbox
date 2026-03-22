@@ -86,8 +86,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = (accessToken: string, profile: UsersProfileResponse) => {
     setAccessToken(accessToken)
+
+    const jwtUser = tokenToUser(accessToken)
     const mapped = profileToUser(profile)
     if (mapped) {
+      mapped.role = jwtUser?.role ?? "user"
       setUser(mapped)
     }
   }
