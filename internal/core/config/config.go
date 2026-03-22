@@ -2,6 +2,7 @@ package config
 
 import (
 	"strconv"
+	"time"
 
 	env "github.com/caarlos0/env/v11"
 )
@@ -11,6 +12,7 @@ type Config struct {
 	Database DatabaseConfig
 	S3       S3Config
 	Mail     MailConfig
+	JWT      JWTConfig
 }
 
 type ServerConfig struct {
@@ -50,6 +52,12 @@ type MailConfig struct {
 	Host string `env:"MAIL_HOST" envDefault:"localhost"`
 	Port int    `env:"MAIL_PORT" envDefault:"1025"`
 	From string `env:"MAIL_FROM" envDefault:"noreply@soapbox.dev"`
+}
+
+type JWTConfig struct {
+	Secret     string        `env:"JWT_SECRET"      envDefault:"dev-secret-change-in-production"`
+	AccessTTL  time.Duration `env:"JWT_ACCESS_TTL"  envDefault:"15m"`
+	RefreshTTL time.Duration `env:"JWT_REFRESH_TTL" envDefault:"168h"`
 }
 
 func Load() (*Config, error) {

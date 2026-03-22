@@ -16,12 +16,14 @@ import (
 	httpSwagger "github.com/swaggo/http-swagger/v2"
 
 	_ "github.com/radni/soapbox/api/swagger"
+	"github.com/radni/soapbox/internal/core"
 	"github.com/radni/soapbox/internal/core/bus"
 	"github.com/radni/soapbox/internal/core/cache"
 	"github.com/radni/soapbox/internal/core/config"
 	"github.com/radni/soapbox/internal/core/db"
 	"github.com/radni/soapbox/internal/core/httpkit"
 	"github.com/radni/soapbox/internal/core/registry"
+	"github.com/radni/soapbox/internal/modules/users"
 	"github.com/radni/soapbox/web"
 )
 
@@ -66,14 +68,20 @@ func main() {
 		httpSwagger.URL("/swagger/doc.json"),
 	))
 
-	_ = database
-	_ = eventBus
-	_ = reg
-	_ = appCache
+	deps := core.ModuleDeps{
+		DB:       database,
+		Bus:      eventBus,
+		Registry: reg,
+		Cache:    appCache,
+		Router:   server.Router,
+		Logger:   logger,
+		Config:   cfg,
+	}
 
-	// Future: load modules here
-	// auth.Load(core.ModuleDeps{...})
-	// users.Load(core.ModuleDeps{...})
+	if err := users.Load(deps); err != nil {
+		logger.Error("failed to load users module", "error", err)
+		os.Exit(1)
+	}
 
 	// Serve embedded SPA — API routes match first, unmatched routes serve the frontend.
 	// In dev, run `make web-build` first or use Vite dev server at :5173 instead.
