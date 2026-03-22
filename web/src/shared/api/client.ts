@@ -1,20 +1,2 @@
-import createClient, { type Middleware } from "openapi-fetch"
-import type { paths } from "./schema"
-import { getAccessToken } from "@/shared/auth/token-storage"
-
-const authMiddleware: Middleware = {
-  async onRequest({ request }) {
-    const token = getAccessToken()
-    if (token) {
-      request.headers.set("Authorization", `Bearer ${token}`)
-    }
-    return request
-  },
-}
-
-export const api = createClient<paths>({
-  baseUrl: "/api/v1",
-  credentials: "include",
-})
-
-api.use(authMiddleware)
+export { client } from "./generated/client.gen"
+export type { Options } from "./generated/sdk.gen"

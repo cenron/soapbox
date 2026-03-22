@@ -1,100 +1,38 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest"
-import createClient, { type Middleware } from "openapi-fetch"
-import type { paths } from "./schema"
-import * as tokenStorage from "@/shared/auth/token-storage"
+import { describe, it, expect, vi } from "vitest"
 
-const mockFetch = vi.fn()
+vi.mock("@/shared/auth/token-storage", () => ({
+  getAccessToken: vi.fn(() => null),
+}))
 
-vi.spyOn(tokenStorage, "getAccessToken")
+import { getAccessToken } from "@/shared/auth/token-storage"
+import { createClientConfig } from "./hey-api"
 
-beforeEach(() => {
-  vi.stubGlobal("fetch", mockFetch)
-  mockFetch.mockReset()
-  vi.mocked(tokenStorage.getAccessToken).mockReturnValue(null)
-})
-
-afterEach(() => {
-  vi.unstubAllGlobals()
-})
-
-function createTestClient() {
-  const authMiddleware: Middleware = {
-    async onRequest({ request }) {
-      const token = tokenStorage.getAccessToken()
-      if (token) {
-        request.headers.set("Authorization", `Bearer ${token}`)
-      }
-      return request
-    },
-  }
-
-  const client = createClient<paths>({
-    baseUrl: "http://localhost/api/v1",
-    credentials: "include",
+describe("hey-api client config", () => {
+  it("sets base URL to /api/v1", () => {
+    const config = createClientConfig({})
+    expect(config.baseUrl).toBe("/api/v1")
   })
 
-  client.use(authMiddleware)
-  return client
-}
-
-describe("api client", () => {
-  it("makes requests to /api/v1 prefix", async () => {
-    mockFetch.mockResolvedValueOnce(
-      new Response(JSON.stringify({ id: "1", username: "test" }), { status: 200 }),
-    )
-
-    const client = createTestClient()
-    await client.GET("/users/{username}", { params: { path: { username: "test" } } })
-
-    const request = mockFetch.mock.calls[0][0] as Request
-    expect(request.url).toBe("http://localhost/api/v1/users/test")
+  it("includes credentials", () => {
+    const config = createClientConfig({})
+    expect(config.credentials).toBe("include")
   })
 
-  it("includes auth header when token is set", async () => {
-    vi.mocked(tokenStorage.getAccessToken).mockReturnValue("test-token")
-    mockFetch.mockResolvedValueOnce(new Response(JSON.stringify({}), { status: 200 }))
+  it("provides auth function that returns token when set", () => {
+    vi.mocked(getAccessToken).mockReturnValue("test-token")
 
-    const client = createTestClient()
-    await client.GET("/users/{username}", { params: { path: { username: "test" } } })
+    const config = createClientConfig({})
+    const authFn = config.auth as () => string
+    expect(authFn()).toBe("test-token")
 
-    const request = mockFetch.mock.calls[0][0] as Request
-    expect(request.headers.get("Authorization")).toBe("Bearer test-token")
+    vi.mocked(getAccessToken).mockReturnValue(null)
   })
 
-  it("sends credentials include", async () => {
-    mockFetch.mockResolvedValueOnce(new Response(JSON.stringify({}), { status: 200 }))
+  it("provides auth function that returns empty string when no token", () => {
+    vi.mocked(getAccessToken).mockReturnValue(null)
 
-    const client = createTestClient()
-    await client.GET("/users/{username}", { params: { path: { username: "test" } } })
-
-    const request = mockFetch.mock.calls[0][0] as Request
-    expect(request.credentials).toBe("include")
-  })
-
-  it("returns data on success", async () => {
-    const body = { access_token: "tok", user: { id: "1", username: "test" } }
-    mockFetch.mockResolvedValueOnce(new Response(JSON.stringify(body), { status: 200 }))
-
-    const client = createTestClient()
-    const { data, error } = await client.POST("/auth/login", {
-      body: { email: "test@example.com", password: "password123" },
-    })
-
-    expect(error).toBeUndefined()
-    expect(data).toEqual(body)
-  })
-
-  it("returns error on non-ok response", async () => {
-    mockFetch.mockResolvedValueOnce(
-      new Response(JSON.stringify({ message: "not found", detail: "user not found" }), { status: 404 }),
-    )
-
-    const client = createTestClient()
-    const { data, error } = await client.GET("/users/{username}", {
-      params: { path: { username: "nobody" } },
-    })
-
-    expect(data).toBeUndefined()
-    expect(error).toEqual({ message: "not found", detail: "user not found" })
+    const config = createClientConfig({})
+    const authFn = config.auth as () => string
+    expect(authFn()).toBe("")
   })
 })
