@@ -136,7 +136,10 @@ func (s *Service) Register(ctx context.Context, req RegisterRequest) (*AuthRespo
 func (s *Service) Login(ctx context.Context, req LoginRequest) (*AuthResponse, *http.Cookie, error) {
 	credential, err := s.store.GetCredentialByEmail(ctx, req.Email)
 	if err != nil {
-		return nil, nil, err
+		if _, ok := types.IsAppError(err); ok {
+			return nil, nil, types.ErrUnauthorized()
+		}
+		return nil, nil, fmt.Errorf("service: login: get credential: %w", err)
 	}
 
 	if err := CheckPassword(credential.PasswordHash, req.Password); err != nil {
@@ -189,11 +192,30 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (*RefreshRes
 
 	oldSession, err := s.store.GetSessionByTokenHash(ctx, tokenHash)
 	if err != nil {
+		if _, ok := types.IsAppError(err); ok {
+			return nil, nil, types.ErrUnauthorized()
+		}
+		return nil, nil, fmt.Errorf("service: refresh: get session: %w", err)
+	}
+
+	_, cookie, newSession, err := s.createSession(ctx, oldSession.UserID)
+	if err != nil {
 		return nil, nil, err
 	}
 
-	if err := s.store.DeleteSession(ctx, oldSession.ID); err != nil {
-		return nil, nil, fmt.Errorf("service: refresh: delete old session: %w", err)
+	err = s.db.WithTx(ctx, func(tx *sqlx.Tx) error {
+		if _, txErr := tx.ExecContext(ctx, "DELETE FROM users.sessions WHERE id = $1", oldSession.ID); txErr != nil {
+			return fmt.Errorf("service: refresh: delete old session: %w", txErr)
+		}
+		if _, txErr := tx.NamedExecContext(ctx,
+			`INSERT INTO users.sessions (id, user_id, refresh_token_hash, expires_at, created_at)
+			 VALUES (:id, :user_id, :refresh_token_hash, :expires_at, :created_at)`, newSession); txErr != nil {
+			return fmt.Errorf("service: refresh: create new session: %w", txErr)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, nil, err
 	}
 
 	profile, err := s.store.GetProfileByID(ctx, oldSession.UserID)
@@ -206,15 +228,6 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (*RefreshRes
 		return nil, nil, fmt.Errorf("service: refresh: get role: %w", err)
 	}
 
-	_, cookie, newSession, err := s.createSession(ctx, oldSession.UserID)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	if err := s.store.CreateSession(ctx, newSession); err != nil {
-		return nil, nil, fmt.Errorf("service: refresh: create session: %w", err)
-	}
-
 	accessToken, err := s.tokens.GenerateAccessToken(oldSession.UserID, profile.Username, role, profile.Verified)
 	if err != nil {
 		return nil, nil, fmt.Errorf("service: refresh: generate access token: %w", err)
@@ -223,19 +236,11 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (*RefreshRes
 	return &RefreshResponse{AccessToken: accessToken}, cookie, nil
 }
 
-// Logout invalidates the session associated with the given refresh token.
-func (s *Service) Logout(ctx context.Context, refreshToken string) error {
-	tokenHash := s.hashToken(refreshToken)
-
-	session, err := s.store.GetSessionByTokenHash(ctx, tokenHash)
-	if err != nil {
-		return err
+// Logout invalidates all sessions for the authenticated user.
+func (s *Service) Logout(ctx context.Context, userID types.ID) error {
+	if err := s.store.DeleteSessionsByUserID(ctx, userID); err != nil {
+		return fmt.Errorf("service: logout: delete sessions: %w", err)
 	}
-
-	if err := s.store.DeleteSession(ctx, session.ID); err != nil {
-		return fmt.Errorf("service: logout: delete session: %w", err)
-	}
-
 	return nil
 }
 

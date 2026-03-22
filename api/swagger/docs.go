@@ -80,7 +80,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Invalidate the refresh token session. Requires a valid access token.",
+                "description": "Invalidate all sessions for the authenticated user and clear the refresh token cookie.",
                 "tags": [
                     "auth"
                 ],

@@ -136,10 +136,10 @@ func (h *Handler) handleRefresh(w http.ResponseWriter, r *http.Request) {
 	httpkit.JSON(w, http.StatusOK, resp)
 }
 
-// handleLogout invalidates the current session.
+// handleLogout invalidates all sessions for the authenticated user.
 //
 // @Summary      Log out
-// @Description  Invalidate the refresh token session. Requires a valid access token.
+// @Description  Invalidate all sessions for the authenticated user and clear the refresh token cookie.
 // @Tags         auth
 // @Security     BearerAuth
 // @Success      204
@@ -147,16 +147,24 @@ func (h *Handler) handleRefresh(w http.ResponseWriter, r *http.Request) {
 // @Failure      500 {object} types.AppError "Internal server error"
 // @Router       /auth/logout [post]
 func (h *Handler) handleLogout(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie("refresh_token")
-	if err != nil {
+	userID, ok := httpkit.UserIDFrom(r.Context())
+	if !ok {
 		httpkit.Error(w, types.ErrUnauthorized())
 		return
 	}
 
-	if err := h.service.Logout(r.Context(), cookie.Value); err != nil {
+	if err := h.service.Logout(r.Context(), userID); err != nil {
 		httpkit.Error(w, err)
 		return
 	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    "",
+		Path:     "/api/v1/auth",
+		HttpOnly: true,
+		MaxAge:   -1,
+	})
 
 	httpkit.NoContent(w)
 }

@@ -325,9 +325,20 @@ func (s *Store) GetFollowingCount(ctx context.Context, userID types.ID) (int, er
 	return count, nil
 }
 
+// followRow is a scan target for follow-list queries that includes the relationship timestamp.
+type followRow struct {
+	Profile
+	FollowedAt time.Time `db:"followed_at"`
+}
+
 func (s *Store) GetFollowers(ctx context.Context, userID types.ID, params types.CursorParams) (types.CursorPage[Profile], error) {
+	if err := validateTimestampCursor(params.Cursor); err != nil {
+		return types.CursorPage[Profile]{}, err
+	}
+
 	const q = `
-		SELECT p.id, p.username, p.display_name, p.bio, p.avatar_url, p.verified, p.created_at, p.updated_at
+		SELECT p.id, p.username, p.display_name, p.bio, p.avatar_url, p.verified, p.created_at, p.updated_at,
+		       f.created_at AS followed_at
 		FROM users.follows f
 		JOIN users.profiles p ON p.id = f.follower_id
 		WHERE f.following_id = $1
@@ -336,18 +347,23 @@ func (s *Store) GetFollowers(ctx context.Context, userID types.ID, params types.
 		LIMIT $3`
 
 	limit := params.Limit + 1
-	rows := make([]Profile, 0, limit)
+	rows := make([]followRow, 0, limit)
 
 	if err := s.db.Conn.SelectContext(ctx, &rows, q, userID, params.Cursor, limit); err != nil {
 		return types.CursorPage[Profile]{}, fmt.Errorf("store: get followers: %w", err)
 	}
 
-	return buildCursorPage(rows, params.Limit), nil
+	return buildFollowCursorPage(rows, params.Limit), nil
 }
 
 func (s *Store) GetFollowing(ctx context.Context, userID types.ID, params types.CursorParams) (types.CursorPage[Profile], error) {
+	if err := validateTimestampCursor(params.Cursor); err != nil {
+		return types.CursorPage[Profile]{}, err
+	}
+
 	const q = `
-		SELECT p.id, p.username, p.display_name, p.bio, p.avatar_url, p.verified, p.created_at, p.updated_at
+		SELECT p.id, p.username, p.display_name, p.bio, p.avatar_url, p.verified, p.created_at, p.updated_at,
+		       f.created_at AS followed_at
 		FROM users.follows f
 		JOIN users.profiles p ON p.id = f.following_id
 		WHERE f.follower_id = $1
@@ -356,13 +372,13 @@ func (s *Store) GetFollowing(ctx context.Context, userID types.ID, params types.
 		LIMIT $3`
 
 	limit := params.Limit + 1
-	rows := make([]Profile, 0, limit)
+	rows := make([]followRow, 0, limit)
 
 	if err := s.db.Conn.SelectContext(ctx, &rows, q, userID, params.Cursor, limit); err != nil {
 		return types.CursorPage[Profile]{}, fmt.Errorf("store: get following: %w", err)
 	}
 
-	return buildCursorPage(rows, params.Limit), nil
+	return buildFollowCursorPage(rows, params.Limit), nil
 }
 
 func (s *Store) GetFollowingIDs(ctx context.Context, userID types.ID) ([]types.ID, error) {
@@ -373,6 +389,17 @@ func (s *Store) GetFollowingIDs(ctx context.Context, userID types.ID) ([]types.I
 		return nil, fmt.Errorf("store: get following ids: %w", err)
 	}
 	return ids, nil
+}
+
+// validateTimestampCursor checks that a cursor string is either empty or a valid RFC3339 timestamp.
+func validateTimestampCursor(cursor string) error {
+	if cursor == "" {
+		return nil
+	}
+	if _, err := time.Parse(time.RFC3339Nano, cursor); err != nil {
+		return types.NewValidation("invalid cursor")
+	}
+	return nil
 }
 
 // Search
@@ -397,21 +424,27 @@ func (s *Store) SearchUsers(ctx context.Context, query string, params types.Curs
 	return buildSearchCursorPage(rows, params.Limit), nil
 }
 
-// buildCursorPage assembles a CursorPage from rows fetched with limit+1.
-// The cursor value is the RFC3339 timestamp of the last included item's created_at.
-func buildCursorPage(rows []Profile, limit int) types.CursorPage[Profile] {
+// buildFollowCursorPage assembles a CursorPage from follow-list rows fetched with limit+1.
+// The cursor value is the RFC3339Nano timestamp of the follow relationship (followed_at),
+// NOT the profile's created_at — the WHERE clause filters on f.created_at.
+func buildFollowCursorPage(rows []followRow, limit int) types.CursorPage[Profile] {
 	hasMore := len(rows) > limit
 	if hasMore {
 		rows = rows[:limit]
 	}
 
+	profiles := make([]Profile, len(rows))
+	for i := range rows {
+		profiles[i] = rows[i].Profile
+	}
+
 	var nextCursor string
 	if hasMore && len(rows) > 0 {
-		nextCursor = rows[len(rows)-1].CreatedAt.UTC().Format(time.RFC3339Nano)
+		nextCursor = rows[len(rows)-1].FollowedAt.UTC().Format(time.RFC3339Nano)
 	}
 
 	return types.CursorPage[Profile]{
-		Items:      rows,
+		Items:      profiles,
 		NextCursor: nextCursor,
 		HasMore:    hasMore,
 	}

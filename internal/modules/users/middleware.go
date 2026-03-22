@@ -95,7 +95,9 @@ func RoleRequired(minRole string) func(http.Handler) http.Handler {
 				return
 			}
 
-			if roleHierarchy[role] < roleHierarchy[minRole] {
+			roleLevel, roleOK := roleHierarchy[role]
+			minLevel, minOK := roleHierarchy[minRole]
+			if !roleOK || !minOK || roleLevel < minLevel {
 				httpkit.Error(w, types.ErrForbidden())
 				return
 			}

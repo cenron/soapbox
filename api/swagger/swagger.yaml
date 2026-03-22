@@ -126,7 +126,8 @@ paths:
       - auth
   /auth/logout:
     post:
-      description: Invalidate the refresh token session. Requires a valid access token.
+      description: Invalidate all sessions for the authenticated user and clear the
+        refresh token cookie.
       responses:
         "204":
           description: No Content
