@@ -28,8 +28,8 @@ export function RegisterPage() {
       auth.login(data.access_token, data.user)
       void navigate("/", { replace: true })
     },
-    onError(err: { message?: string }) {
-      setError(err?.message ?? "Registration failed. Please try again.")
+    onError(err: { detail?: string; message?: string }) {
+      setError(err?.detail ?? err?.message ?? "Registration failed. Please try again.")
     },
   })
 
