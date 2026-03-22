@@ -77,3 +77,11 @@
 ## [2026-03-22] swaggo does not support Go generics in annotations
 **What happened:** `@Success 200 {object} types.CursorPage[ProfileResponse]` caused `ParseComment error: cannot find type definition`. swaggo's parser doesn't resolve generic type instantiations.
 **Takeaway:** Create a concrete swagger-only struct (e.g., `ProfileCursorPage`) that mirrors the generic type's fields and use that in annotations. The runtime code still uses the generic `types.CursorPage[T]`.
+
+## [2026-03-22] Escape ILIKE wildcards in user-supplied search input
+**What happened:** `SearchUsers` built an ILIKE pattern with `"%" + query + "%"` — if a user searched for `%` or `_`, those are ILIKE wildcards and match unintended rows.
+**Takeaway:** Escape `\`, `%`, and `_` in user input before wrapping with wildcards. This is pattern injection, not SQL injection (the value is parameterized), but it produces incorrect results.
+
+## [2026-03-22] @hey-api/openapi-ts bundles client-fetch since v0.73.0
+**What happened:** Installing `@hey-api/client-fetch` separately triggered a deprecation warning — it's been bundled into `@hey-api/openapi-ts` since v0.73.0.
+**Takeaway:** Only install `@hey-api/openapi-ts` (pinned with `-E`). The client runtime is included. Don't add `@hey-api/client-fetch` as a separate dependency.
