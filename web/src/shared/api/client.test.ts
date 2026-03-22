@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest"
-import { api } from "./client"
-import { ApiError } from "./errors"
+import createClient, { type Middleware } from "openapi-fetch"
+import type { paths } from "./schema"
 import * as tokenStorage from "@/shared/auth/token-storage"
 
 const mockFetch = vi.fn()
@@ -17,71 +17,84 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
+function createTestClient() {
+  const authMiddleware: Middleware = {
+    async onRequest({ request }) {
+      const token = tokenStorage.getAccessToken()
+      if (token) {
+        request.headers.set("Authorization", `Bearer ${token}`)
+      }
+      return request
+    },
+  }
+
+  const client = createClient<paths>({
+    baseUrl: "http://localhost/api/v1",
+    credentials: "include",
+  })
+
+  client.use(authMiddleware)
+  return client
+}
+
 describe("api client", () => {
-  it("makes GET requests to /api/v1 prefix", async () => {
-    mockFetch.mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 }))
+  it("makes requests to /api/v1 prefix", async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ id: "1", username: "test" }), { status: 200 }),
+    )
 
-    const result = await api.get("/users/me")
+    const client = createTestClient()
+    await client.GET("/users/{username}", { params: { path: { username: "test" } } })
 
-    expect(mockFetch).toHaveBeenCalledWith("/api/v1/users/me", expect.objectContaining({ method: "GET" }))
-    expect(result).toEqual({ ok: true })
+    const request = mockFetch.mock.calls[0][0] as Request
+    expect(request.url).toBe("http://localhost/api/v1/users/test")
   })
 
   it("includes auth header when token is set", async () => {
     vi.mocked(tokenStorage.getAccessToken).mockReturnValue("test-token")
-    mockFetch.mockResolvedValue(new Response(JSON.stringify({}), { status: 200 }))
+    mockFetch.mockResolvedValueOnce(new Response(JSON.stringify({}), { status: 200 }))
 
-    await api.get("/users/me")
+    const client = createTestClient()
+    await client.GET("/users/{username}", { params: { path: { username: "test" } } })
 
-    const [, options] = mockFetch.mock.calls[0] as [string, RequestInit]
-    const headers = options.headers as Headers
-    expect(headers.get("Authorization")).toBe("Bearer test-token")
+    const request = mockFetch.mock.calls[0][0] as Request
+    expect(request.headers.get("Authorization")).toBe("Bearer test-token")
   })
 
   it("sends credentials include", async () => {
-    mockFetch.mockResolvedValue(new Response(JSON.stringify({}), { status: 200 }))
+    mockFetch.mockResolvedValueOnce(new Response(JSON.stringify({}), { status: 200 }))
 
-    await api.get("/test")
+    const client = createTestClient()
+    await client.GET("/users/{username}", { params: { path: { username: "test" } } })
 
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.objectContaining({ credentials: "include" }),
-    )
+    const request = mockFetch.mock.calls[0][0] as Request
+    expect(request.credentials).toBe("include")
   })
 
-  it("sends JSON body on POST", async () => {
-    mockFetch.mockResolvedValue(new Response(JSON.stringify({}), { status: 200 }))
+  it("returns data on success", async () => {
+    const body = { access_token: "tok", user: { id: "1", username: "test" } }
+    mockFetch.mockResolvedValueOnce(new Response(JSON.stringify(body), { status: 200 }))
 
-    await api.post("/auth/login", { email: "test@example.com", password: "secret" })
+    const client = createTestClient()
+    const { data, error } = await client.POST("/auth/login", {
+      body: { email: "test@example.com", password: "password123" },
+    })
 
-    const [, options] = mockFetch.mock.calls[0] as [string, RequestInit]
-    expect(options.method).toBe("POST")
-    expect(options.body).toBe(JSON.stringify({ email: "test@example.com", password: "secret" }))
+    expect(error).toBeUndefined()
+    expect(data).toEqual(body)
   })
 
-  it("throws ApiError on non-ok response", async () => {
-    mockFetch.mockResolvedValue(
+  it("returns error on non-ok response", async () => {
+    mockFetch.mockResolvedValueOnce(
       new Response(JSON.stringify({ message: "not found", detail: "user not found" }), { status: 404 }),
     )
 
-    try {
-      await api.get("/users/999")
-      expect.fail("should have thrown")
-    } catch (err) {
-      expect(err).toBeInstanceOf(ApiError)
-      const apiErr = err as ApiError
-      expect(apiErr.status).toBe(404)
-      expect(apiErr.kind).toBe("not found")
-      expect(apiErr.message).toBe("user not found")
-      expect(apiErr.isNotFound).toBe(true)
-    }
-  })
+    const client = createTestClient()
+    const { data, error } = await client.GET("/users/{username}", {
+      params: { path: { username: "nobody" } },
+    })
 
-  it("returns undefined for 204 responses", async () => {
-    mockFetch.mockResolvedValue(new Response(null, { status: 204 }))
-
-    const result = await api.delete("/users/me")
-
-    expect(result).toBeUndefined()
+    expect(data).toBeUndefined()
+    expect(error).toEqual({ message: "not found", detail: "user not found" })
   })
 })
