@@ -21,3 +21,19 @@
 ## [2026-03-21] shadcn init places files based on components.json aliases
 **What happened:** Default shadcn init puts components in `src/components/ui/` and utils in `src/lib/utils.ts`. Our project uses `src/shared/ui/` and `src/shared/lib/utils.ts`.
 **Takeaway:** Update `components.json` aliases immediately after init — before adding any components — to point `ui` to `@/shared/ui`, `lib` to `@/shared/lib`, `hooks` to `@/shared/hooks`. Future `npx shadcn add` commands will then place files correctly.
+
+## [2026-03-22] Avoid circular dependencies between auth token storage and API client
+**What happened:** `token-storage.ts` imported `api` from `client.ts`, which imports `getAccessToken` from `token-storage.ts`. Works due to ESM hoisting but is fragile.
+**Takeaway:** `refreshAccessToken()` should call `fetch` directly — it's a bootstrap operation that shouldn't depend on the API client it helps configure.
+
+## [2026-03-22] SPA catch-all handler must exclude API paths
+**What happened:** Using `router.NotFound(SPAHandler(...))` catches all unmatched routes including `/api/v1/nonexistent`, returning `index.html` instead of a JSON 404.
+**Takeaway:** SPA handler must check path prefixes (`/api/`, `/swagger/`, `/healthz`, `/ws`) and return a proper JSON 404 for API paths. Also check `stat.IsDir()` to prevent directory listings.
+
+## [2026-03-22] Vitest picks up Playwright test files
+**What happened:** Vitest's default include pattern matches `e2e/*.spec.ts` alongside `src/**/*.test.ts`, causing Playwright's `test.describe()` to fail in the Vitest runner.
+**Takeaway:** Add `exclude: ["e2e/**", "node_modules/**"]` to `vitest.config.ts` when Playwright tests live in the same package.
+
+## [2026-03-22] npm create vite@latest initializes a nested git repo
+**What happened:** `npm create vite@latest web` runs `git init` inside `web/`, creating a nested `.git` directory. The parent repo then treats `web/` as a submodule-like entry and `git add` silently does nothing.
+**Takeaway:** After scaffolding with Vite, immediately `rm -rf web/.git` before staging any files.
