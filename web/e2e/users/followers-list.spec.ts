@@ -5,7 +5,7 @@ test.describe("followers list", () => {
   test("shows testuser in @admin's followers list after following", async ({ page }) => {
     await loginAs(page, SEED.user.email, SEED.user.password)
 
-    await page.goto("/admin")
+    await page.goto("/@admin")
 
     // Ensure testuser is following admin before checking the list.
     const followButton = page.getByRole("button", { name: "Follow" })

@@ -54,7 +54,7 @@ export function NavBar() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem asChild>
-                  <Link to={`/${user.username}`}>Profile</Link>
+                  <Link to={`/@${user.username}`}>Profile</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to="/settings">Settings</Link>

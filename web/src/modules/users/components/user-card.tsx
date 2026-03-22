@@ -17,7 +17,7 @@ export function UserCard({ user }: UserCardProps) {
 
   return (
     <div className="flex items-center gap-3 py-3">
-      <Link to={`/${username}`} className="shrink-0">
+      <Link to={`/@${username}`} className="shrink-0">
         <Avatar size="lg">
           {user.avatar_url && <AvatarImage src={user.avatar_url} alt={displayName} />}
           <AvatarFallback>{initial}</AvatarFallback>
@@ -25,7 +25,7 @@ export function UserCard({ user }: UserCardProps) {
       </Link>
 
       <div className="min-w-0 flex-1">
-        <Link to={`/${username}`} className="group flex flex-col">
+        <Link to={`/@${username}`} className="group flex flex-col">
           <span className="truncate font-medium leading-tight group-hover:underline">
             {displayName}
           </span>

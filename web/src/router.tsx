@@ -20,7 +20,7 @@ export const router = createBrowserRouter([
       { path: "/login", element: <LoginPage /> },
       { path: "/register", element: <RegisterPage /> },
       { path: "/search", element: <SearchPage /> },
-      { path: "/:username", element: <ProfilePage /> },
+      { path: "/@:username", element: <ProfilePage /> },
       { path: "/post/:id", element: <PostDetailPage /> },
 
       // Protected routes

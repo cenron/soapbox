@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useCallback, useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   postUsersByUsernameFollowMutation,
@@ -18,25 +18,30 @@ export function FollowButton({ username, isFollowing, onToggle }: FollowButtonPr
   const { user } = useAuth()
   const queryClient = useQueryClient()
   const [isHoveringFollow, setIsHoveringFollow] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const invalidateAndToggle = useCallback(() => {
+    setError(null)
+    void queryClient.invalidateQueries({
+      queryKey: getUsersByUsernameQueryKey({ path: { username } }),
+    })
+    onToggle?.()
+  }, [queryClient, username, onToggle])
+
+  const handleError = useCallback((err: { detail?: string; message?: string }) => {
+    setError(err?.detail ?? err?.message ?? "Something went wrong.")
+  }, [])
 
   const followMutation = useMutation({
     ...postUsersByUsernameFollowMutation(),
-    onSuccess() {
-      void queryClient.invalidateQueries({
-        queryKey: getUsersByUsernameQueryKey({ path: { username } }),
-      })
-      onToggle?.()
-    },
+    onSuccess: invalidateAndToggle,
+    onError: handleError,
   })
 
   const unfollowMutation = useMutation({
     ...deleteUsersByUsernameFollowMutation(),
-    onSuccess() {
-      void queryClient.invalidateQueries({
-        queryKey: getUsersByUsernameQueryKey({ path: { username } }),
-      })
-      onToggle?.()
-    },
+    onSuccess: invalidateAndToggle,
+    onError: handleError,
   })
 
   if (user?.username === username) return null
@@ -51,24 +56,25 @@ export function FollowButton({ username, isFollowing, onToggle }: FollowButtonPr
     }
   }
 
-  if (isFollowing) {
-    return (
-      <Button
-        variant={isHoveringFollow ? "destructive" : "outline"}
-        size="sm"
-        disabled={isPending}
-        onClick={handleClick}
-        onMouseEnter={() => setIsHoveringFollow(true)}
-        onMouseLeave={() => setIsHoveringFollow(false)}
-      >
-        {isHoveringFollow ? "Unfollow" : "Following"}
-      </Button>
-    )
-  }
-
   return (
-    <Button size="sm" disabled={isPending} onClick={handleClick}>
-      Follow
-    </Button>
+    <div className="flex flex-col items-end gap-1">
+      {isFollowing ? (
+        <Button
+          variant={isHoveringFollow ? "destructive" : "outline"}
+          size="sm"
+          disabled={isPending}
+          onClick={handleClick}
+          onMouseEnter={() => setIsHoveringFollow(true)}
+          onMouseLeave={() => setIsHoveringFollow(false)}
+        >
+          {isHoveringFollow ? "Unfollow" : "Following"}
+        </Button>
+      ) : (
+        <Button size="sm" disabled={isPending} onClick={handleClick}>
+          Follow
+        </Button>
+      )}
+      {error && <p className="text-xs text-red-500">{error}</p>}
+    </div>
   )
 }

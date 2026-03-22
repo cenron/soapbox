@@ -5,7 +5,7 @@ test.describe("follow / unfollow", () => {
   test("follows and unfollows @admin", async ({ page }) => {
     await loginAs(page, SEED.user.email, SEED.user.password)
 
-    await page.goto("/admin")
+    await page.goto("/@admin")
 
     const followButton = page.getByRole("button", { name: "Follow" })
     const followingButton = page.getByRole("button", { name: "Following" })
