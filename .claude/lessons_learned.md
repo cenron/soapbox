@@ -58,6 +58,30 @@
 **What happened:** Middleware stubs called `next.ServeHTTP(w, r)` without any auth check, meaning accidentally wiring them into routes would create open endpoints. Password stubs returned generic "not implemented" errors with no function context.
 **Takeaway:** Skeleton middleware stubs should return 401/403. Skeleton function stubs should either be implemented or return errors that identify which function is unimplemented. Never let a stub silently succeed — it masks integration bugs.
 
+## [2026-03-22] goose provider.Close() closes the shared *sql.DB connection
+**What happened:** `goose.NewProvider()` receives a `*sql.DB` from the shared sqlx pool. Calling `provider.Close()` closes that underlying connection, making the entire DB pool unusable after migrations.
+**Takeaway:** Never call `provider.Close()` when the `*sql.DB` is shared with the rest of the app. Add a comment explaining why.
+
+## [2026-03-22] httpkit.Error must log non-AppError errors
+**What happened:** All non-AppError errors were silently swallowed — the 500 response had no corresponding log line, making debugging impossible.
+**Takeaway:** Always `slog.Error("unhandled error", "error", err)` before returning a 500. Errors should never disappear into a void.
+
+## [2026-03-22] Public endpoints need AuthOptional middleware for viewer-relative fields
+**What happened:** `GET /users/:username` returned `is_following: false` even for authenticated users because the JWT was in the header but no middleware decoded it on public routes.
+**Takeaway:** Use `AuthOptional` middleware on public endpoints that have viewer-relative response fields (e.g., is_following). It decodes the JWT if present but doesn't reject unauthenticated requests.
+
 ## [2026-03-22] golangci-lint gocritic requires named results when both returns are the same type
 **What happened:** `func VerifiedFrom(ctx) (bool, bool)` triggered `unnamedResult` lint error. Then `(verified bool, ok bool)` triggered `paramTypeCombine`. And named returns require `=` not `:=` in the body.
 **Takeaway:** When returning two values of the same type, use combined named results: `(verified, ok bool)` and assign with `=` not `:=`.
+
+## [2026-03-22] swaggo does not support Go generics in annotations
+**What happened:** `@Success 200 {object} types.CursorPage[ProfileResponse]` caused `ParseComment error: cannot find type definition`. swaggo's parser doesn't resolve generic type instantiations.
+**Takeaway:** Create a concrete swagger-only struct (e.g., `ProfileCursorPage`) that mirrors the generic type's fields and use that in annotations. The runtime code still uses the generic `types.CursorPage[T]`.
+
+## [2026-03-22] Escape ILIKE wildcards in user-supplied search input
+**What happened:** `SearchUsers` built an ILIKE pattern with `"%" + query + "%"` — if a user searched for `%` or `_`, those are ILIKE wildcards and match unintended rows.
+**Takeaway:** Escape `\`, `%`, and `_` in user input before wrapping with wildcards. This is pattern injection, not SQL injection (the value is parameterized), but it produces incorrect results.
+
+## [2026-03-22] @hey-api/openapi-ts bundles client-fetch since v0.73.0
+**What happened:** Installing `@hey-api/client-fetch` separately triggered a deprecation warning — it's been bundled into `@hey-api/openapi-ts` since v0.73.0.
+**Takeaway:** Only install `@hey-api/openapi-ts` (pinned with `-E`). The client runtime is included. Don't add `@hey-api/client-fetch` as a separate dependency.

@@ -12,5 +12,16 @@ func Load(ctx context.Context, deps core.ModuleDeps) error {
 		return err
 	}
 
+	store := NewStore(deps.DB)
+	tokens := NewTokenService(deps.Config.JWT)
+	service := NewService(deps.DB, store, tokens, deps.Bus, deps.Logger, deps.Config.JWT, deps.Config.Server.IsProd())
+	handler := NewHandler(service, deps.Logger)
+
+	if err := RegisterQueries(deps.Bus, store); err != nil {
+		return err
+	}
+
+	handler.Routes(deps.Router, AuthRequired(tokens), AuthOptional(tokens))
+
 	return nil
 }

@@ -109,6 +109,14 @@ const (
 	TopicProfileUpdated = "users.profile_updated"
 )
 
+// Swagger response types (swaggo does not support Go generics)
+
+type ProfileCursorPage struct {
+	Items      []ProfileResponse `json:"items"`
+	NextCursor string            `json:"next_cursor,omitempty"`
+	HasMore    bool              `json:"has_more"`
+}
+
 // Query name constants
 
 const (

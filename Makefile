@@ -1,4 +1,4 @@
-.PHONY: build run test lint swagger docker-up docker-down web-install web-dev web-build web-test web-test-e2e web-lint
+.PHONY: build run test lint swagger web-generate-api generate docker-up docker-down web-install web-dev web-build web-test web-test-e2e web-lint ensure-dist
 
 build: web-build swagger
 	go build -o bin/web ./cmd/web
@@ -21,6 +21,11 @@ lint: web-lint
 swagger:
 	@test -x $$(go env GOPATH)/bin/swag || { echo "swag not found. Install it: go install github.com/swaggo/swag/cmd/swag@latest"; exit 1; }
 	$$(go env GOPATH)/bin/swag init -g cmd/web/main.go -o api/swagger
+
+web-generate-api:
+	cd web && npm run generate:api
+
+generate: swagger web-generate-api
 
 docker-up:
 	docker compose up -d

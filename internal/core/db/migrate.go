@@ -31,7 +31,7 @@ func (db *DB) Migrate(ctx context.Context, schema string, migrations fs.FS) erro
 	if err != nil {
 		return fmt.Errorf("db: migrate provider: %w", err)
 	}
-	defer provider.Close()
+	// NOTE: Do not call provider.Close() — it closes the shared *sql.DB connection pool.
 
 	if _, err := provider.Up(ctx); err != nil {
 		return fmt.Errorf("db: migrate up %s: %w", schema, err)

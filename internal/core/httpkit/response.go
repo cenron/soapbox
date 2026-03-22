@@ -23,6 +23,7 @@ func Error(w http.ResponseWriter, err error) {
 		return
 	}
 
+	slog.Error("unhandled error", "error", err)
 	JSON(w, http.StatusInternalServerError, map[string]string{
 		"message": "internal server error",
 	})
