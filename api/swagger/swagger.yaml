@@ -1,13 +1,438 @@
 basePath: /api/v1
 consumes:
 - application/json
+definitions:
+  types.AppError:
+    properties:
+      detail:
+        type: string
+      message:
+        type: string
+    type: object
+  users.AuthResponse:
+    properties:
+      access_token:
+        type: string
+      user:
+        $ref: '#/definitions/users.ProfileResponse'
+    type: object
+  users.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  users.ProfileCursorPage:
+    properties:
+      has_more:
+        type: boolean
+      items:
+        items:
+          $ref: '#/definitions/users.ProfileResponse'
+        type: array
+      next_cursor:
+        type: string
+    type: object
+  users.ProfileResponse:
+    properties:
+      avatar_url:
+        type: string
+      bio:
+        type: string
+      created_at:
+        type: string
+      display_name:
+        type: string
+      follower_count:
+        type: integer
+      following_count:
+        type: integer
+      id:
+        type: string
+      is_following:
+        type: boolean
+      username:
+        type: string
+      verified:
+        type: boolean
+    type: object
+  users.RefreshResponse:
+    properties:
+      access_token:
+        type: string
+    type: object
+  users.RegisterRequest:
+    properties:
+      display_name:
+        type: string
+      email:
+        type: string
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  users.UpdateProfileRequest:
+    properties:
+      avatar_url:
+        type: string
+      bio:
+        type: string
+      display_name:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact: {}
   description: Chronological microblogging platform — pre-2022 Twitter clone.
   title: Soapbox API
   version: "1.0"
-paths: {}
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate with email and password. Returns an access token and
+        sets a refresh token cookie.
+      parameters:
+      - description: Login credentials
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/users.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/users.AuthResponse'
+        "401":
+          description: Invalid credentials
+          schema:
+            $ref: '#/definitions/types.AppError'
+        "422":
+          description: Validation error
+          schema:
+            $ref: '#/definitions/types.AppError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/types.AppError'
+      summary: Log in
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      description: Invalidate the refresh token session. Requires a valid access token.
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Not authenticated
+          schema:
+            $ref: '#/definitions/types.AppError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/types.AppError'
+      security:
+      - BearerAuth: []
+      summary: Log out
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      description: Exchange a valid refresh token (from cookie) for a new access token
+        and rotated refresh token cookie.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/users.RefreshResponse'
+        "401":
+          description: Missing or invalid refresh token
+          schema:
+            $ref: '#/definitions/types.AppError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/types.AppError'
+      summary: Refresh access token
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Create an account with email, password, and username. Returns an
+        access token and sets a refresh token cookie.
+      parameters:
+      - description: Registration details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/users.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/users.AuthResponse'
+        "409":
+          description: Email or username already taken
+          schema:
+            $ref: '#/definitions/types.AppError'
+        "422":
+          description: Validation error
+          schema:
+            $ref: '#/definitions/types.AppError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/types.AppError'
+      summary: Register a new user
+      tags:
+      - auth
+  /users/{username}:
+    get:
+      description: Retrieve a user's profile by username. If authenticated, includes
+        whether the viewer follows this user.
+      parameters:
+      - description: Username
+        in: path
+        name: username
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/users.ProfileResponse'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/types.AppError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/types.AppError'
+      summary: Get user profile
+      tags:
+      - users
+  /users/{username}/follow:
+    delete:
+      description: Remove a follow relationship with the user identified by username.
+        Requires authentication.
+      parameters:
+      - description: Username to unfollow
+        in: path
+        name: username
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Not authenticated
+          schema:
+            $ref: '#/definitions/types.AppError'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/types.AppError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/types.AppError'
+      security:
+      - BearerAuth: []
+      summary: Unfollow a user
+      tags:
+      - users
+    post:
+      description: Follow the user identified by username. Requires authentication.
+      parameters:
+      - description: Username to follow
+        in: path
+        name: username
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Not authenticated
+          schema:
+            $ref: '#/definitions/types.AppError'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/types.AppError'
+        "409":
+          description: Already following
+          schema:
+            $ref: '#/definitions/types.AppError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/types.AppError'
+      security:
+      - BearerAuth: []
+      summary: Follow a user
+      tags:
+      - users
+  /users/{username}/followers:
+    get:
+      description: Retrieve a cursor-paginated list of users who follow the given
+        username.
+      parameters:
+      - description: Username
+        in: path
+        name: username
+        required: true
+        type: string
+      - description: Pagination cursor
+        in: query
+        name: cursor
+        type: string
+      - description: Page size (default 20, max 100)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/users.ProfileCursorPage'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/types.AppError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/types.AppError'
+      summary: List followers
+      tags:
+      - users
+  /users/{username}/following:
+    get:
+      description: Retrieve a cursor-paginated list of users that the given username
+        follows.
+      parameters:
+      - description: Username
+        in: path
+        name: username
+        required: true
+        type: string
+      - description: Pagination cursor
+        in: query
+        name: cursor
+        type: string
+      - description: Page size (default 20, max 100)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/users.ProfileCursorPage'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/types.AppError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/types.AppError'
+      summary: List following
+      tags:
+      - users
+  /users/me:
+    put:
+      consumes:
+      - application/json
+      description: Update display name, bio, or avatar URL for the authenticated user.
+      parameters:
+      - description: Profile fields to update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/users.UpdateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/users.ProfileResponse'
+        "401":
+          description: Not authenticated
+          schema:
+            $ref: '#/definitions/types.AppError'
+        "422":
+          description: Validation error
+          schema:
+            $ref: '#/definitions/types.AppError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/types.AppError'
+      security:
+      - BearerAuth: []
+      summary: Update own profile
+      tags:
+      - users
+  /users/search:
+    get:
+      description: Full-text search over usernames and display names, cursor-paginated.
+      parameters:
+      - description: Search query
+        in: query
+        name: q
+        required: true
+        type: string
+      - description: Pagination cursor
+        in: query
+        name: cursor
+        type: string
+      - description: Page size (default 20, max 100)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/users.ProfileCursorPage'
+        "422":
+          description: Missing query parameter
+          schema:
+            $ref: '#/definitions/types.AppError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/types.AppError'
+      summary: Search users
+      tags:
+      - users
 produces:
 - application/json
 schemes:

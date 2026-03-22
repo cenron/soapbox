@@ -290,10 +290,10 @@ func (h *Handler) handleUnfollow(w http.ResponseWriter, r *http.Request) {
 // @Description  Retrieve a cursor-paginated list of users who follow the given username.
 // @Tags         users
 // @Produce      json
-// @Param        username path  string "Username"
+// @Param        username path  string true  "Username"
 // @Param        cursor   query string false "Pagination cursor"
 // @Param        limit    query int    false "Page size (default 20, max 100)"
-// @Success      200 {object} types.CursorPage[ProfileResponse]
+// @Success      200 {object} ProfileCursorPage
 // @Failure      404 {object} types.AppError "User not found"
 // @Failure      500 {object} types.AppError "Internal server error"
 // @Router       /users/{username}/followers [get]
@@ -319,7 +319,7 @@ func (h *Handler) handleGetFollowers(w http.ResponseWriter, r *http.Request) {
 // @Param        username path  string true  "Username"
 // @Param        cursor   query string false "Pagination cursor"
 // @Param        limit    query int    false "Page size (default 20, max 100)"
-// @Success      200 {object} types.CursorPage[ProfileResponse]
+// @Success      200 {object} ProfileCursorPage
 // @Failure      404 {object} types.AppError "User not found"
 // @Failure      500 {object} types.AppError "Internal server error"
 // @Router       /users/{username}/following [get]
@@ -345,7 +345,7 @@ func (h *Handler) handleGetFollowing(w http.ResponseWriter, r *http.Request) {
 // @Param        q      query string true  "Search query"
 // @Param        cursor query string false "Pagination cursor"
 // @Param        limit  query int    false "Page size (default 20, max 100)"
-// @Success      200 {object} types.CursorPage[ProfileResponse]
+// @Success      200 {object} ProfileCursorPage
 // @Failure      422 {object} types.AppError "Missing query parameter"
 // @Failure      500 {object} types.AppError "Internal server error"
 // @Router       /users/search [get]
