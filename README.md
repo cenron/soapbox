@@ -31,24 +31,24 @@ cd web && npm install && cd ..
 # Start dev infrastructure (Postgres, MinIO, Mailpit)
 make docker-up
 
-# Run the backend (hot-reload via air)
+# Run backend + frontend together
 make run
-
-# In a separate terminal, run the frontend dev server
-make web-dev
 ```
 
-The backend starts at `http://localhost:8080`. The frontend dev server starts at `http://localhost:5173` and proxies API requests to the backend.
+This starts both the Go backend (air, hot-reload) and Vite dev server in one terminal. Use `http://localhost:5173` for development — it proxies API requests to the backend at `:8080`.
 
 ## Make targets
 
 | Command | Description |
 |---------|-------------|
-| `make run` | Start backend dev server with hot-reload (air) |
+| `make run` | Start backend + frontend dev servers together |
+| `make be-run` | Start backend only (air, hot-reload) |
+| `make web-run` | Start frontend only (Vite dev server) |
 | `make build` | Build frontend + Go binary to `bin/web` |
 | `make test` | Run all tests (frontend + backend) |
 | `make lint` | Run all linters (ESLint + golangci-lint) |
-| `make swagger` | Regenerate Swagger docs |
+| `make swagger` | Regenerate Swagger docs (Go spec only) |
+| `make generate` | Regenerate Swagger + frontend API types |
 | `make docker-up` | Start Postgres, MinIO, Mailpit |
 | `make docker-down` | Stop dev infrastructure |
 | `make web-install` | Install frontend dependencies |
@@ -57,6 +57,18 @@ The backend starts at `http://localhost:8080`. The frontend dev server starts at
 | `make web-test` | Run frontend unit tests (Vitest) |
 | `make web-test-e2e` | Run e2e tests (Playwright, chromium/firefox/webkit) |
 | `make web-lint` | Run frontend linter (ESLint) |
+
+## Dev accounts
+
+The following accounts are seeded automatically in development (`APP_ENV=development`):
+
+| Role | Email | Password | Username |
+|------|-------|----------|----------|
+| Admin | admin@soapbox.dev | admin123 | @admin |
+| Moderator | mod@soapbox.dev | mod12345 | @moderator |
+| User | user@soapbox.dev | user1234 | @testuser |
+
+These accounts are **not** created in production environments.
 
 ## Dev services
 
@@ -85,8 +97,7 @@ soapbox/
 │   │   ├── testutil/            # Test helpers and mocks
 │   │   └── types/               # IDs, pagination, errors
 │   └── modules/                 # Feature modules (isolated, communicate via bus)
-│       ├── auth/                # Auth module
-│       ├── users/               # User profiles and follows
+│       ├── users/               # Auth, profiles, and follows
 │       ├── posts/               # Posts, likes, reposts, hashtags
 │       ├── feed/                # Timeline assembly
 │       ├── notifications/       # In-app notifications

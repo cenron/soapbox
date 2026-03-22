@@ -1,10 +1,33 @@
-import { Link } from "react-router"
+import { Link, useNavigate } from "react-router"
+import { useMutation } from "@tanstack/react-query"
+import { postAuthLogoutMutation } from "@/shared/api/generated/@tanstack/react-query.gen"
 import { useAuth } from "@/shared/auth/auth-context"
 import { Button } from "@/shared/ui/button"
 import { Input } from "@/shared/ui/input"
+import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/shared/ui/dropdown-menu"
 
 export function NavBar() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user, logout } = useAuth()
+  const navigate = useNavigate()
+
+  const { mutate: logoutMutate } = useMutation({
+    ...postAuthLogoutMutation(),
+    onSettled() {
+      logout()
+      void navigate("/login")
+    },
+  })
+
+  function handleLogout() {
+    logoutMutate({})
+  }
 
   return (
     <header className="sticky top-0 z-50 border-b bg-background">
@@ -18,10 +41,30 @@ export function NavBar() {
         </div>
 
         <div className="ml-auto flex items-center gap-2">
-          {isAuthenticated ? (
-            <Button variant="ghost" size="sm" asChild>
-              <Link to="/settings">Settings</Link>
-            </Button>
+          {isAuthenticated && user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-2 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  <Avatar size="sm">
+                    {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.username} />}
+                    <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <span className="hidden text-sm font-medium sm:block">@{user.username}</span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link to={`/${user.username}`}>Profile</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/settings">Settings</Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem variant="destructive" onSelect={handleLogout}>
+                  Log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
             <>
               <Button variant="ghost" size="sm" asChild>
