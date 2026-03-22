@@ -82,6 +82,10 @@
 **What happened:** `SearchUsers` built an ILIKE pattern with `"%" + query + "%"` — if a user searched for `%` or `_`, those are ILIKE wildcards and match unintended rows.
 **Takeaway:** Escape `\`, `%`, and `_` in user input before wrapping with wildcards. This is pattern injection, not SQL injection (the value is parameterized), but it produces incorrect results.
 
+## [2026-03-22] Frontend error display must use detail, not message
+**What happened:** Register page showed "conflict" to the user instead of "email already registered". The backend `AppError` has `message` (generic: "conflict", "not found") and `detail` (human-friendly: "email already registered"). The frontend was displaying `message`.
+**Takeaway:** Always prefer `error.detail` over `error.message` for user-facing error display. The `message` field is a category ("conflict", "validation error"), while `detail` is the explanation. Pattern: `err.detail ?? err.message ?? "Something went wrong."`.
+
 ## [2026-03-22] @hey-api/openapi-ts bundles client-fetch since v0.73.0
 **What happened:** Installing `@hey-api/client-fetch` separately triggered a deprecation warning — it's been bundled into `@hey-api/openapi-ts` since v0.73.0.
 **Takeaway:** Only install `@hey-api/openapi-ts` (pinned with `-E`). The client runtime is included. Don't add `@hey-api/client-fetch` as a separate dependency.
