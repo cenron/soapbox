@@ -106,6 +106,15 @@ describe("WsClient", () => {
     expect(MockWebSocket.instances).toHaveLength(3)
   })
 
+  it("ignores duplicate connect() calls", () => {
+    const client = new WsClient("ws://localhost:8080/ws")
+    client.connect()
+    client.connect()
+    client.connect()
+
+    expect(MockWebSocket.instances).toHaveLength(1)
+  })
+
   it("stops reconnecting after disconnect()", () => {
     const client = new WsClient("ws://localhost:8080/ws")
     client.connect()

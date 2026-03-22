@@ -75,15 +75,14 @@ func main() {
 	// auth.Load(core.ModuleDeps{...})
 	// users.Load(core.ModuleDeps{...})
 
-	// Serve SPA in production — skip when running behind Vite dev server
-	if cfg.Server.IsProd() {
-		staticFS, fsErr := fs.Sub(web.StaticFiles, "dist")
-		if fsErr != nil {
-			logger.Error("failed to create sub filesystem for SPA", "error", fsErr)
-			os.Exit(1)
-		}
-		server.Router.NotFound(httpkit.SPAHandler(staticFS))
+	// Serve embedded SPA — API routes match first, unmatched routes serve the frontend.
+	// In dev, run `make web-build` first or use Vite dev server at :5173 instead.
+	staticFS, fsErr := fs.Sub(web.StaticFiles, "dist")
+	if fsErr != nil {
+		logger.Error("failed to create sub filesystem for SPA", "error", fsErr)
+		os.Exit(1)
 	}
+	server.Router.NotFound(httpkit.SPAHandler(staticFS))
 
 	errCh := make(chan error, 1)
 	go func() {
@@ -95,6 +94,7 @@ func main() {
 	addr := cfg.Server.Host + ":" + itoa(cfg.Server.Port)
 	logger.Info("soapbox started", "addr", addr)
 	logger.Info("swagger UI", "url", "http://localhost:"+itoa(cfg.Server.Port)+"/swagger/index.html")
+	logger.Info("web app", "url", "http://localhost:"+itoa(cfg.Server.Port))
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)

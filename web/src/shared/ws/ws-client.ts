@@ -17,6 +17,8 @@ export class WsClient {
   }
 
   connect(): void {
+    if (this.ws) return
+
     this.shouldReconnect = true
     this.reconnectAttempt = 0
     this.open()
@@ -86,6 +88,8 @@ export class WsClient {
   }
 
   private scheduleReconnect(): void {
+    if (this.reconnectTimer) return
+
     const delay = Math.min(
       BASE_RECONNECT_DELAY_MS * 2 ** this.reconnectAttempt,
       MAX_RECONNECT_DELAY_MS,

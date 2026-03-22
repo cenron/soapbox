@@ -1,16 +1,20 @@
-import { describe, it, expect, beforeEach, vi } from "vitest"
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest"
 import { api } from "./client"
 import { ApiError } from "./errors"
 import * as tokenStorage from "@/shared/auth/token-storage"
 
 const mockFetch = vi.fn()
-globalThis.fetch = mockFetch
 
 vi.spyOn(tokenStorage, "getAccessToken")
 
 beforeEach(() => {
+  vi.stubGlobal("fetch", mockFetch)
   mockFetch.mockReset()
   vi.mocked(tokenStorage.getAccessToken).mockReturnValue(null)
+})
+
+afterEach(() => {
+  vi.unstubAllGlobals()
 })
 
 describe("api client", () => {
@@ -67,7 +71,7 @@ describe("api client", () => {
       expect(err).toBeInstanceOf(ApiError)
       const apiErr = err as ApiError
       expect(apiErr.status).toBe(404)
-      expect(apiErr.code).toBe("not found")
+      expect(apiErr.kind).toBe("not found")
       expect(apiErr.message).toBe("user not found")
       expect(apiErr.isNotFound).toBe(true)
     }
