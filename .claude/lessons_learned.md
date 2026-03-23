@@ -137,3 +137,15 @@
 ## [2026-03-22] Sequential browser projects don't fix webkit auth flakes — keep parallel
 **What happened:** Tried splitting user module tests into sequential browser projects (chromium → firefox → webkit via `dependencies`) to fix webkit 401s on follow. It didn't help — the root cause is webkit's slower token refresh after `page.goto()`, not browser concurrency. Sequential runs nearly doubled test time (14s → 23s) with no reliability gain.
 **Takeaway:** Keep `fullyParallel: true`. Fix webkit flakes with: (1) unique users via `registerAndLogin()`, (2) `waitForLoadState("networkidle")` after `goto()`, (3) verify auth-only UI is visible before clicking authenticated features, (4) `retries: 1` locally. Don't add complexity that doesn't solve the problem.
+
+## [2026-03-22] Login/register pages must redirect authenticated users
+**What happened:** Navigating to `/login` while already authenticated showed the login form with the nav bar displaying the logged-in user. The page didn't check auth state.
+**Takeaway:** Add `if (auth.isAuthenticated) return <Navigate to={from} replace />` after all hooks in login/register pages. Use `<Navigate>` component (not `navigate()`) to avoid hook ordering issues — hooks must be called unconditionally. Preserve the `from` location state so protected-route redirects still work (e.g., `/settings` → `/login` → login → `/settings`).
+
+## [2026-03-22] MCP manual validation must cover every page and tab, not just the happy path
+**What happened:** Profile page Posts tab showed "Posts will appear here." placeholder because the `GET /users/{username}/posts` endpoint didn't exist. The MCP walkthrough tested compose, like, reply, hashtag, delete — but never clicked the Profile link to check the Posts tab. The gap shipped unnoticed.
+**Takeaway:** MCP validation is QA, not a demo. Before marking complete: (1) visit every page reachable from the nav, (2) click every tab, (3) verify data loads in each one, (4) test as a second user too. Use a checklist, not intuition. If a feature creates data, verify it shows up everywhere it should (profile, detail page, search).
+
+## [2026-03-22] PostActions buttons need title attributes for accessibility and test selectors
+**What happened:** E2E tests couldn't find like/repost/delete buttons with `getByRole('button', { name: 'Like' })` because buttons only contained SVG icons with no text content. `aria-label` or `title` was missing.
+**Takeaway:** Always add `title` attributes to icon-only buttons. This provides accessibility (tooltip on hover, screen reader label) and a stable test selector via `page.getByTitle("Like")`. Don't rely on `getByRole('button', { name })` for icon-only buttons — there's no accessible name without explicit labeling.

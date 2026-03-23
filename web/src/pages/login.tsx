@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Link, useNavigate, useLocation } from "react-router"
+import { Link, Navigate, useNavigate, useLocation } from "react-router"
 import { useMutation } from "@tanstack/react-query"
 import { postAuthLoginMutation } from "@/shared/api/generated/@tanstack/react-query.gen"
 import { useAuth } from "@/shared/auth/auth-context"
@@ -32,6 +32,10 @@ export function LoginPage() {
       setError("Invalid email or password.")
     },
   })
+
+  if (auth.isAuthenticated) {
+    return <Navigate to={from} replace />
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

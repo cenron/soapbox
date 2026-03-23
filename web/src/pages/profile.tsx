@@ -4,12 +4,14 @@ import {
   getUsersByUsernameOptions,
   getUsersByUsernameFollowersOptions,
   getUsersByUsernameFollowingOptions,
+  getUsersByUsernamePostsOptions,
 } from "@/shared/api/generated/@tanstack/react-query.gen"
 import { useAuth } from "@/shared/auth/auth-context"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs"
 import { Separator } from "@/shared/ui/separator"
 import { ProfileHeader } from "@/modules/users/components/profile-header"
 import { UserCard } from "@/modules/users/components/user-card"
+import { PostCard } from "@/modules/posts/components/post-card"
 
 export function ProfilePage() {
   const { username: rawUsername = "" } = useParams()
@@ -18,6 +20,11 @@ export function ProfilePage() {
 
   const profileQuery = useQuery({
     ...getUsersByUsernameOptions({ path: { username } }),
+    enabled: username.length > 0,
+  })
+
+  const postsQuery = useQuery({
+    ...getUsersByUsernamePostsOptions({ path: { username } }),
     enabled: username.length > 0,
   })
 
@@ -65,6 +72,7 @@ export function ProfilePage() {
   const profile = profileQuery.data
   const isOwnProfile = currentUser?.username === username
 
+  const posts = postsQuery.data?.items ?? []
   const followers = followersQuery.data?.items ?? []
   const following = followingQuery.data?.items ?? []
 
@@ -86,7 +94,20 @@ export function ProfilePage() {
         </TabsList>
 
         <TabsContent value="posts" className="mt-4">
-          <p className="text-sm text-muted-foreground">No posts yet.</p>
+          {postsQuery.isLoading && (
+            <p className="text-sm text-muted-foreground">Loading...</p>
+          )}
+          {postsQuery.isError && (
+            <p className="text-sm text-red-500">Failed to load posts.</p>
+          )}
+          {!postsQuery.isLoading && !postsQuery.isError && posts.length === 0 && (
+            <p className="text-sm text-muted-foreground">No posts yet.</p>
+          )}
+          <div className="-mx-6">
+            {posts.map((post) => (
+              <PostCard key={post.id} post={post} />
+            ))}
+          </div>
         </TabsContent>
 
         <TabsContent value="followers" className="mt-4">

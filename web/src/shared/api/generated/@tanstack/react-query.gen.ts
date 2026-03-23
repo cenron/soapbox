@@ -3,8 +3,8 @@
 import { type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { deleteUsersByUsernameFollow, getUsersByUsername, getUsersByUsernameFollowers, getUsersByUsernameFollowing, getUsersSearch, type Options, postAuthLogin, postAuthLogout, postAuthRefresh, postAuthRegister, postMediaByIdConfirm, postMediaUploadUrl, postUsersByUsernameFollow, putUsersMe } from '../sdk.gen';
-import type { DeleteUsersByUsernameFollowData, DeleteUsersByUsernameFollowError, GetUsersByUsernameData, GetUsersByUsernameError, GetUsersByUsernameFollowersData, GetUsersByUsernameFollowersError, GetUsersByUsernameFollowersResponse, GetUsersByUsernameFollowingData, GetUsersByUsernameFollowingError, GetUsersByUsernameFollowingResponse, GetUsersByUsernameResponse, GetUsersSearchData, GetUsersSearchError, GetUsersSearchResponse, PostAuthLoginData, PostAuthLoginError, PostAuthLoginResponse, PostAuthLogoutData, PostAuthLogoutError, PostAuthRefreshData, PostAuthRefreshError, PostAuthRefreshResponse, PostAuthRegisterData, PostAuthRegisterError, PostAuthRegisterResponse, PostMediaByIdConfirmData, PostMediaByIdConfirmError, PostMediaByIdConfirmResponse, PostMediaUploadUrlData, PostMediaUploadUrlError, PostMediaUploadUrlResponse, PostUsersByUsernameFollowData, PostUsersByUsernameFollowError, PutUsersMeData, PutUsersMeError, PutUsersMeResponse } from '../types.gen';
+import { deletePostsById, deletePostsByIdLike, deletePostsByIdRepost, deleteUsersByUsernameFollow, getPostsById, getPostsByIdReplies, getPostsSearch, getUsersByUsername, getUsersByUsernameFollowers, getUsersByUsernameFollowing, getUsersByUsernamePosts, getUsersSearch, type Options, postAuthLogin, postAuthLogout, postAuthRefresh, postAuthRegister, postMediaByIdConfirm, postMediaUploadUrl, postPosts, postPostsByIdLike, postPostsByIdRepost, postUsersByUsernameFollow, putUsersMe } from '../sdk.gen';
+import type { DeletePostsByIdData, DeletePostsByIdError, DeletePostsByIdLikeData, DeletePostsByIdLikeError, DeletePostsByIdLikeResponse, DeletePostsByIdRepostData, DeletePostsByIdRepostError, DeletePostsByIdRepostResponse, DeleteUsersByUsernameFollowData, DeleteUsersByUsernameFollowError, GetPostsByIdData, GetPostsByIdError, GetPostsByIdRepliesData, GetPostsByIdRepliesError, GetPostsByIdRepliesResponse, GetPostsByIdResponse, GetPostsSearchData, GetPostsSearchError, GetPostsSearchResponse, GetUsersByUsernameData, GetUsersByUsernameError, GetUsersByUsernameFollowersData, GetUsersByUsernameFollowersError, GetUsersByUsernameFollowersResponse, GetUsersByUsernameFollowingData, GetUsersByUsernameFollowingError, GetUsersByUsernameFollowingResponse, GetUsersByUsernamePostsData, GetUsersByUsernamePostsError, GetUsersByUsernamePostsResponse, GetUsersByUsernameResponse, GetUsersSearchData, GetUsersSearchError, GetUsersSearchResponse, PostAuthLoginData, PostAuthLoginError, PostAuthLoginResponse, PostAuthLogoutData, PostAuthLogoutError, PostAuthRefreshData, PostAuthRefreshError, PostAuthRefreshResponse, PostAuthRegisterData, PostAuthRegisterError, PostAuthRegisterResponse, PostMediaByIdConfirmData, PostMediaByIdConfirmError, PostMediaByIdConfirmResponse, PostMediaUploadUrlData, PostMediaUploadUrlError, PostMediaUploadUrlResponse, PostPostsByIdLikeData, PostPostsByIdLikeError, PostPostsByIdLikeResponse, PostPostsByIdRepostData, PostPostsByIdRepostError, PostPostsByIdRepostResponse, PostPostsData, PostPostsError, PostPostsResponse, PostUsersByUsernameFollowData, PostUsersByUsernameFollowError, PutUsersMeData, PutUsersMeError, PutUsersMeResponse } from '../types.gen';
 
 /**
  * Log in
@@ -121,14 +121,14 @@ export const postMediaByIdConfirmMutation = (options?: Partial<Options<PostMedia
 };
 
 /**
- * Update own profile
+ * Create a post
  *
- * Update display name, bio, or avatar URL for the authenticated user.
+ * Create a new post with text and optional image attachments. Supports replies (parent_id) and reposts (repost_of_id). Automatically extracts hashtags and fetches link previews.
  */
-export const putUsersMeMutation = (options?: Partial<Options<PutUsersMeData>>): UseMutationOptions<PutUsersMeResponse, PutUsersMeError, Options<PutUsersMeData>> => {
-    const mutationOptions: UseMutationOptions<PutUsersMeResponse, PutUsersMeError, Options<PutUsersMeData>> = {
+export const postPostsMutation = (options?: Partial<Options<PostPostsData>>): UseMutationOptions<PostPostsResponse, PostPostsError, Options<PostPostsData>> => {
+    const mutationOptions: UseMutationOptions<PostPostsResponse, PostPostsError, Options<PostPostsData>> = {
         mutationFn: async (fnOptions) => {
-            const { data } = await putUsersMe({
+            const { data } = await postPosts({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -172,16 +172,16 @@ const createQueryKey = <TOptions extends Options>(id: string, options?: TOptions
     return [params];
 };
 
-export const getUsersSearchQueryKey = (options: Options<GetUsersSearchData>) => createQueryKey('getUsersSearch', options);
+export const getPostsSearchQueryKey = (options: Options<GetPostsSearchData>) => createQueryKey('getPostsSearch', options);
 
 /**
- * Search users
+ * Search posts
  *
- * Full-text search over usernames and display names, cursor-paginated.
+ * Full-text search over post body content, cursor-paginated.
  */
-export const getUsersSearchOptions = (options: Options<GetUsersSearchData>) => queryOptions<GetUsersSearchResponse, GetUsersSearchError, GetUsersSearchResponse, ReturnType<typeof getUsersSearchQueryKey>>({
+export const getPostsSearchOptions = (options: Options<GetPostsSearchData>) => queryOptions<GetPostsSearchResponse, GetPostsSearchError, GetPostsSearchResponse, ReturnType<typeof getPostsSearchQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await getUsersSearch({
+        const { data } = await getPostsSearch({
             ...options,
             ...queryKey[0],
             signal,
@@ -189,7 +189,7 @@ export const getUsersSearchOptions = (options: Options<GetUsersSearchData>) => q
         });
         return data;
     },
-    queryKey: getUsersSearchQueryKey(options)
+    queryKey: getPostsSearchQueryKey(options)
 });
 
 const createInfiniteParams = <K extends Pick<QueryKey<Options>[0], 'body' | 'headers' | 'path' | 'query'>>(queryKey: QueryKey<Options>, page: K) => {
@@ -220,6 +220,238 @@ const createInfiniteParams = <K extends Pick<QueryKey<Options>[0], 'body' | 'hea
     }
     return params as unknown as typeof page;
 };
+
+export const getPostsSearchInfiniteQueryKey = (options: Options<GetPostsSearchData>): QueryKey<Options<GetPostsSearchData>> => createQueryKey('getPostsSearch', options, true);
+
+/**
+ * Search posts
+ *
+ * Full-text search over post body content, cursor-paginated.
+ */
+export const getPostsSearchInfiniteOptions = (options: Options<GetPostsSearchData>) => infiniteQueryOptions<GetPostsSearchResponse, GetPostsSearchError, InfiniteData<GetPostsSearchResponse>, QueryKey<Options<GetPostsSearchData>>, string | Pick<QueryKey<Options<GetPostsSearchData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+// @ts-ignore
+{
+    queryFn: async ({ pageParam, queryKey, signal }) => {
+        // @ts-ignore
+        const page: Pick<QueryKey<Options<GetPostsSearchData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+            query: {
+                cursor: pageParam
+            }
+        };
+        const params = createInfiniteParams(queryKey, page);
+        const { data } = await getPostsSearch({
+            ...options,
+            ...params,
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getPostsSearchInfiniteQueryKey(options)
+});
+
+/**
+ * Delete a post
+ *
+ * Delete a post. Only the post author can delete their own post.
+ */
+export const deletePostsByIdMutation = (options?: Partial<Options<DeletePostsByIdData>>): UseMutationOptions<unknown, DeletePostsByIdError, Options<DeletePostsByIdData>> => {
+    const mutationOptions: UseMutationOptions<unknown, DeletePostsByIdError, Options<DeletePostsByIdData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await deletePostsById({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getPostsByIdQueryKey = (options: Options<GetPostsByIdData>) => createQueryKey('getPostsById', options);
+
+/**
+ * Get a post
+ *
+ * Retrieve a post by ID. If authenticated, includes whether the viewer has liked or reposted this post.
+ */
+export const getPostsByIdOptions = (options: Options<GetPostsByIdData>) => queryOptions<GetPostsByIdResponse, GetPostsByIdError, GetPostsByIdResponse, ReturnType<typeof getPostsByIdQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getPostsById({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getPostsByIdQueryKey(options)
+});
+
+/**
+ * Unlike a post
+ *
+ * Remove a like from a post. Returns the updated like count.
+ */
+export const deletePostsByIdLikeMutation = (options?: Partial<Options<DeletePostsByIdLikeData>>): UseMutationOptions<DeletePostsByIdLikeResponse, DeletePostsByIdLikeError, Options<DeletePostsByIdLikeData>> => {
+    const mutationOptions: UseMutationOptions<DeletePostsByIdLikeResponse, DeletePostsByIdLikeError, Options<DeletePostsByIdLikeData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await deletePostsByIdLike({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Like a post
+ *
+ * Add a like to a post. Returns the updated like count.
+ */
+export const postPostsByIdLikeMutation = (options?: Partial<Options<PostPostsByIdLikeData>>): UseMutationOptions<PostPostsByIdLikeResponse, PostPostsByIdLikeError, Options<PostPostsByIdLikeData>> => {
+    const mutationOptions: UseMutationOptions<PostPostsByIdLikeResponse, PostPostsByIdLikeError, Options<PostPostsByIdLikeData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await postPostsByIdLike({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getPostsByIdRepliesQueryKey = (options: Options<GetPostsByIdRepliesData>) => createQueryKey('getPostsByIdReplies', options);
+
+/**
+ * Get replies
+ *
+ * Retrieve replies to a post, cursor-paginated in chronological order.
+ */
+export const getPostsByIdRepliesOptions = (options: Options<GetPostsByIdRepliesData>) => queryOptions<GetPostsByIdRepliesResponse, GetPostsByIdRepliesError, GetPostsByIdRepliesResponse, ReturnType<typeof getPostsByIdRepliesQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getPostsByIdReplies({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getPostsByIdRepliesQueryKey(options)
+});
+
+export const getPostsByIdRepliesInfiniteQueryKey = (options: Options<GetPostsByIdRepliesData>): QueryKey<Options<GetPostsByIdRepliesData>> => createQueryKey('getPostsByIdReplies', options, true);
+
+/**
+ * Get replies
+ *
+ * Retrieve replies to a post, cursor-paginated in chronological order.
+ */
+export const getPostsByIdRepliesInfiniteOptions = (options: Options<GetPostsByIdRepliesData>) => infiniteQueryOptions<GetPostsByIdRepliesResponse, GetPostsByIdRepliesError, InfiniteData<GetPostsByIdRepliesResponse>, QueryKey<Options<GetPostsByIdRepliesData>>, string | Pick<QueryKey<Options<GetPostsByIdRepliesData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+// @ts-ignore
+{
+    queryFn: async ({ pageParam, queryKey, signal }) => {
+        // @ts-ignore
+        const page: Pick<QueryKey<Options<GetPostsByIdRepliesData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+            query: {
+                cursor: pageParam
+            }
+        };
+        const params = createInfiniteParams(queryKey, page);
+        const { data } = await getPostsByIdReplies({
+            ...options,
+            ...params,
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getPostsByIdRepliesInfiniteQueryKey(options)
+});
+
+/**
+ * Undo repost
+ *
+ * Remove a repost of a post. Returns the updated repost count.
+ */
+export const deletePostsByIdRepostMutation = (options?: Partial<Options<DeletePostsByIdRepostData>>): UseMutationOptions<DeletePostsByIdRepostResponse, DeletePostsByIdRepostError, Options<DeletePostsByIdRepostData>> => {
+    const mutationOptions: UseMutationOptions<DeletePostsByIdRepostResponse, DeletePostsByIdRepostError, Options<DeletePostsByIdRepostData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await deletePostsByIdRepost({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Repost a post
+ *
+ * Repost an existing post. Returns the updated repost count.
+ */
+export const postPostsByIdRepostMutation = (options?: Partial<Options<PostPostsByIdRepostData>>): UseMutationOptions<PostPostsByIdRepostResponse, PostPostsByIdRepostError, Options<PostPostsByIdRepostData>> => {
+    const mutationOptions: UseMutationOptions<PostPostsByIdRepostResponse, PostPostsByIdRepostError, Options<PostPostsByIdRepostData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await postPostsByIdRepost({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Update own profile
+ *
+ * Update display name, bio, or avatar URL for the authenticated user.
+ */
+export const putUsersMeMutation = (options?: Partial<Options<PutUsersMeData>>): UseMutationOptions<PutUsersMeResponse, PutUsersMeError, Options<PutUsersMeData>> => {
+    const mutationOptions: UseMutationOptions<PutUsersMeResponse, PutUsersMeError, Options<PutUsersMeData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await putUsersMe({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getUsersSearchQueryKey = (options: Options<GetUsersSearchData>) => createQueryKey('getUsersSearch', options);
+
+/**
+ * Search users
+ *
+ * Full-text search over usernames and display names, cursor-paginated.
+ */
+export const getUsersSearchOptions = (options: Options<GetUsersSearchData>) => queryOptions<GetUsersSearchResponse, GetUsersSearchError, GetUsersSearchResponse, ReturnType<typeof getUsersSearchQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getUsersSearch({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getUsersSearchQueryKey(options)
+});
 
 export const getUsersSearchInfiniteQueryKey = (options: Options<GetUsersSearchData>): QueryKey<Options<GetUsersSearchData>> => createQueryKey('getUsersSearch', options, true);
 
@@ -404,4 +636,53 @@ export const getUsersByUsernameFollowingInfiniteOptions = (options: Options<GetU
         return data;
     },
     queryKey: getUsersByUsernameFollowingInfiniteQueryKey(options)
+});
+
+export const getUsersByUsernamePostsQueryKey = (options: Options<GetUsersByUsernamePostsData>) => createQueryKey('getUsersByUsernamePosts', options);
+
+/**
+ * Get user posts
+ *
+ * Retrieve root posts by a user, cursor-paginated in reverse chronological order. If authenticated, includes liked/reposted status.
+ */
+export const getUsersByUsernamePostsOptions = (options: Options<GetUsersByUsernamePostsData>) => queryOptions<GetUsersByUsernamePostsResponse, GetUsersByUsernamePostsError, GetUsersByUsernamePostsResponse, ReturnType<typeof getUsersByUsernamePostsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getUsersByUsernamePosts({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getUsersByUsernamePostsQueryKey(options)
+});
+
+export const getUsersByUsernamePostsInfiniteQueryKey = (options: Options<GetUsersByUsernamePostsData>): QueryKey<Options<GetUsersByUsernamePostsData>> => createQueryKey('getUsersByUsernamePosts', options, true);
+
+/**
+ * Get user posts
+ *
+ * Retrieve root posts by a user, cursor-paginated in reverse chronological order. If authenticated, includes liked/reposted status.
+ */
+export const getUsersByUsernamePostsInfiniteOptions = (options: Options<GetUsersByUsernamePostsData>) => infiniteQueryOptions<GetUsersByUsernamePostsResponse, GetUsersByUsernamePostsError, InfiniteData<GetUsersByUsernamePostsResponse>, QueryKey<Options<GetUsersByUsernamePostsData>>, string | Pick<QueryKey<Options<GetUsersByUsernamePostsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+// @ts-ignore
+{
+    queryFn: async ({ pageParam, queryKey, signal }) => {
+        // @ts-ignore
+        const page: Pick<QueryKey<Options<GetUsersByUsernamePostsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+            query: {
+                cursor: pageParam
+            }
+        };
+        const params = createInfiniteParams(queryKey, page);
+        const { data } = await getUsersByUsernamePosts({
+            ...options,
+            ...params,
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getUsersByUsernamePostsInfiniteQueryKey(options)
 });

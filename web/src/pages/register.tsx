@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Link, useNavigate } from "react-router"
+import { Link, Navigate, useNavigate } from "react-router"
 import { useMutation } from "@tanstack/react-query"
 import { postAuthRegisterMutation } from "@/shared/api/generated/@tanstack/react-query.gen"
 import { useAuth } from "@/shared/auth/auth-context"
@@ -32,6 +32,10 @@ export function RegisterPage() {
       setError(err?.detail ?? err?.message ?? "Registration failed. Please try again.")
     },
   })
+
+  if (auth.isAuthenticated) {
+    return <Navigate to="/" replace />
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

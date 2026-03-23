@@ -1,8 +1,16 @@
+import { PostComposer } from "@/modules/posts/components/post-composer"
+import { useAuth } from "@/shared/auth/auth-context"
+
 export function HomePage() {
+  const { isAuthenticated } = useAuth()
+
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold">Home</h1>
-      <p className="text-muted-foreground">Your timeline will appear here.</p>
+    <div>
+      {isAuthenticated && <PostComposer />}
+
+      <div className="p-6 text-center text-sm text-muted-foreground">
+        Your timeline will appear here once the feed module is built.
+      </div>
     </div>
   )
 }
