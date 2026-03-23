@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { DeleteUsersByUsernameFollowData, DeleteUsersByUsernameFollowErrors, DeleteUsersByUsernameFollowResponses, GetUsersByUsernameData, GetUsersByUsernameErrors, GetUsersByUsernameFollowersData, GetUsersByUsernameFollowersErrors, GetUsersByUsernameFollowersResponses, GetUsersByUsernameFollowingData, GetUsersByUsernameFollowingErrors, GetUsersByUsernameFollowingResponses, GetUsersByUsernameResponses, GetUsersSearchData, GetUsersSearchErrors, GetUsersSearchResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthLogoutData, PostAuthLogoutErrors, PostAuthLogoutResponses, PostAuthRefreshData, PostAuthRefreshErrors, PostAuthRefreshResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses, PostUsersByUsernameFollowData, PostUsersByUsernameFollowErrors, PostUsersByUsernameFollowResponses, PutUsersMeData, PutUsersMeErrors, PutUsersMeResponses } from './types.gen';
+import type { DeleteUsersByUsernameFollowData, DeleteUsersByUsernameFollowErrors, DeleteUsersByUsernameFollowResponses, GetUsersByUsernameData, GetUsersByUsernameErrors, GetUsersByUsernameFollowersData, GetUsersByUsernameFollowersErrors, GetUsersByUsernameFollowersResponses, GetUsersByUsernameFollowingData, GetUsersByUsernameFollowingErrors, GetUsersByUsernameFollowingResponses, GetUsersByUsernameResponses, GetUsersSearchData, GetUsersSearchErrors, GetUsersSearchResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthLogoutData, PostAuthLogoutErrors, PostAuthLogoutResponses, PostAuthRefreshData, PostAuthRefreshErrors, PostAuthRefreshResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses, PostMediaByIdConfirmData, PostMediaByIdConfirmErrors, PostMediaByIdConfirmResponses, PostMediaUploadUrlData, PostMediaUploadUrlErrors, PostMediaUploadUrlResponses, PostUsersByUsernameFollowData, PostUsersByUsernameFollowErrors, PostUsersByUsernameFollowResponses, PutUsersMeData, PutUsersMeErrors, PutUsersMeResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -62,6 +62,32 @@ export const postAuthRegister = <ThrowOnError extends boolean = false>(options: 
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ * Request a presigned upload URL
+ *
+ * Returns a presigned S3 URL for direct file upload. The client uploads the file directly to S3 using this URL, then confirms the upload.
+ */
+export const postMediaUploadUrl = <ThrowOnError extends boolean = false>(options: Options<PostMediaUploadUrlData, ThrowOnError>) => (options.client ?? client).post<PostMediaUploadUrlResponses, PostMediaUploadUrlErrors, ThrowOnError>({
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/media/upload-url',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Confirm an upload
+ *
+ * Marks a pending upload as ready. Call this after successfully uploading the file to the presigned URL.
+ */
+export const postMediaByIdConfirm = <ThrowOnError extends boolean = false>(options: Options<PostMediaByIdConfirmData, ThrowOnError>) => (options.client ?? client).post<PostMediaByIdConfirmResponses, PostMediaByIdConfirmErrors, ThrowOnError>({
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/media/{id}/confirm',
+    ...options
 });
 
 /**

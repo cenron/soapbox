@@ -7,6 +7,7 @@ import {
 } from "@/shared/api/generated/@tanstack/react-query.gen"
 import type { UsersProfileResponse, UsersUpdateProfileRequest } from "@/shared/api/generated/types.gen"
 import { useAuth } from "@/shared/auth/auth-context"
+import { ImageUpload } from "@/modules/media/components/image-upload"
 import { Button } from "@/shared/ui/button"
 import { Input } from "@/shared/ui/input"
 import { Label } from "@/shared/ui/label"
@@ -81,11 +82,21 @@ function ProfileForm({ profile, username }: ProfileFormProps) {
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="avatarUrl">Avatar URL</Label>
+        <Label>Avatar</Label>
+        {avatarUrl && (
+          <img
+            src={avatarUrl}
+            alt="Current avatar"
+            className="h-16 w-16 rounded-full object-cover"
+          />
+        )}
+        <ImageUpload
+          onUploadComplete={(upload) => setAvatarUrl(upload.url ?? "")}
+        />
         <Input
           id="avatarUrl"
           type="url"
-          placeholder="https://example.com/avatar.jpg"
+          placeholder="Or enter an image URL directly"
           value={avatarUrl}
           onChange={(e) => setAvatarUrl(e.target.value)}
         />

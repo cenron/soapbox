@@ -48,7 +48,7 @@ All e2e tests live in `web/e2e/`. Run with `make web-test-e2e` or `cd web && npm
 
 ## Phase 2: Media Module
 
-**Status:** `pending`
+**Status:** `complete`
 
 | Test file | Journey | What it verifies |
 |-----------|---------|-----------------|

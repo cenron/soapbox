@@ -23,6 +23,7 @@ import (
 	"github.com/radni/soapbox/internal/core/db"
 	"github.com/radni/soapbox/internal/core/httpkit"
 	"github.com/radni/soapbox/internal/core/registry"
+	"github.com/radni/soapbox/internal/modules/media"
 	"github.com/radni/soapbox/internal/modules/users"
 	"github.com/radni/soapbox/web"
 )
@@ -72,18 +73,27 @@ func main() {
 		httpSwagger.URL("/swagger/doc.json"),
 	))
 
+	tokens := users.NewTokenService(cfg.JWT)
+
 	deps := core.ModuleDeps{
-		DB:       database,
-		Bus:      eventBus,
-		Registry: reg,
-		Cache:    appCache,
-		Router:   server.Router,
-		Logger:   logger,
-		Config:   cfg,
+		DB:           database,
+		Bus:          eventBus,
+		Registry:     reg,
+		Cache:        appCache,
+		Router:       server.Router,
+		Logger:       logger,
+		Config:       cfg,
+		AuthRequired: users.AuthRequired(tokens),
+		AuthOptional: users.AuthOptional(tokens),
 	}
 
 	if err := users.Load(ctx, deps); err != nil {
 		logger.Error("failed to load users module", "error", err)
+		os.Exit(1)
+	}
+
+	if err := media.Load(ctx, deps); err != nil {
+		logger.Error("failed to load media module", "error", err)
 		os.Exit(1)
 	}
 
