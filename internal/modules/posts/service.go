@@ -425,9 +425,9 @@ func (s *Service) getAuthorProfile(userID types.ID) (*userProfileResponse, error
 		return nil, err
 	}
 
-	profile, ok := result.(userProfileResponse)
-	if !ok {
-		return nil, fmt.Errorf("service: unexpected profile response type")
+	profile, err := bus.Convert[userProfileResponse](result)
+	if err != nil {
+		return nil, fmt.Errorf("service: convert profile response: %w", err)
 	}
 	return &profile, nil
 }
@@ -460,9 +460,9 @@ func (s *Service) resolveMedia(mediaIDs []string) ([]resolvedMedia, error) {
 		return nil, fmt.Errorf("service: resolve media: %w", err)
 	}
 
-	uploads, ok := result.([]mediaUploadResponse)
-	if !ok {
-		return nil, fmt.Errorf("service: resolve media: unexpected response type")
+	uploads, err := bus.Convert[[]mediaUploadResponse](result)
+	if err != nil {
+		return nil, fmt.Errorf("service: resolve media: convert response: %w", err)
 	}
 
 	if len(uploads) != len(ids) {

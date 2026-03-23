@@ -23,6 +23,9 @@ import (
 	"github.com/radni/soapbox/internal/core/db"
 	"github.com/radni/soapbox/internal/core/httpkit"
 	"github.com/radni/soapbox/internal/core/registry"
+	"github.com/radni/soapbox/internal/core/types"
+	"github.com/radni/soapbox/internal/core/ws"
+	"github.com/radni/soapbox/internal/modules/feed"
 	"github.com/radni/soapbox/internal/modules/media"
 	"github.com/radni/soapbox/internal/modules/posts"
 	"github.com/radni/soapbox/internal/modules/users"
@@ -75,6 +78,17 @@ func main() {
 	))
 
 	tokens := users.NewTokenService(cfg.JWT)
+	wsHub := ws.NewHub(logger)
+
+	tokenValidator := func(token string) (types.ID, error) {
+		claims, err := tokens.ValidateAccessToken(token)
+		if err != nil {
+			return types.ZeroID, err
+		}
+		return types.ParseID(claims.Subject)
+	}
+
+	server.Router.Get("/ws", ws.UpgradeHandler(wsHub, tokenValidator, logger))
 
 	deps := core.ModuleDeps{
 		DB:           database,
@@ -84,6 +98,7 @@ func main() {
 		Router:       server.Router,
 		Logger:       logger,
 		Config:       cfg,
+		WSHub:        wsHub,
 		AuthRequired: users.AuthRequired(tokens),
 		AuthOptional: users.AuthOptional(tokens),
 	}
@@ -102,6 +117,11 @@ func main() {
 
 	if err := posts.Load(ctx, deps); err != nil {
 		logger.Error("failed to load posts module", "error", err)
+		os.Exit(1)
+	}
+
+	if err := feed.Load(ctx, deps); err != nil {
+		logger.Error("failed to load feed module", "error", err)
 		os.Exit(1)
 	}
 

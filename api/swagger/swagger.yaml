@@ -2,6 +2,82 @@ basePath: /api/v1
 consumes:
 - application/json
 definitions:
+  feed.TimelineCursorPage:
+    properties:
+      has_more:
+        type: boolean
+      items:
+        items:
+          $ref: '#/definitions/feed.postResponse'
+        type: array
+      next_cursor:
+        type: string
+    type: object
+  feed.postLinkPreview:
+    properties:
+      description:
+        type: string
+      image_url:
+        type: string
+      title:
+        type: string
+      url:
+        type: string
+    type: object
+  feed.postMediaResponse:
+    properties:
+      id:
+        type: string
+      media_type:
+        type: string
+      media_url:
+        type: string
+      position:
+        type: integer
+    type: object
+  feed.postResponse:
+    properties:
+      author_avatar_url:
+        type: string
+      author_display_name:
+        type: string
+      author_id:
+        type: string
+      author_username:
+        type: string
+      author_verified:
+        type: boolean
+      body:
+        type: string
+      created_at:
+        type: string
+      hashtags:
+        items:
+          type: string
+        type: array
+      id:
+        type: string
+      like_count:
+        type: integer
+      liked_by_me:
+        type: boolean
+      link_preview:
+        $ref: '#/definitions/feed.postLinkPreview'
+      media:
+        items:
+          $ref: '#/definitions/feed.postMediaResponse'
+        type: array
+      parent_id:
+        type: string
+      reply_count:
+        type: integer
+      repost_count:
+        type: integer
+      repost_of_id:
+        type: string
+      reposted_by_me:
+        type: boolean
+    type: object
   media.ConfirmUploadRequest:
     properties:
       size:
@@ -346,6 +422,39 @@ paths:
       summary: Register a new user
       tags:
       - auth
+  /feed:
+    get:
+      description: Returns the authenticated user's chronological home timeline. Shows
+        posts from followed users and the user's own posts.
+      parameters:
+      - description: Pagination cursor
+        in: query
+        name: cursor
+        type: string
+      - description: Page size (default 20, max 100)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/feed.TimelineCursorPage'
+        "401":
+          description: Not authenticated
+          schema:
+            $ref: '#/definitions/types.AppError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/types.AppError'
+      security:
+      - BearerAuth: []
+      summary: Get timeline
+      tags:
+      - feed
   /media/{id}/confirm:
     post:
       consumes:

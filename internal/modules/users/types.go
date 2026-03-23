@@ -100,6 +100,10 @@ type GetFollowingQuery struct {
 	UserID types.ID
 }
 
+type GetFollowerIDsQuery struct {
+	UserID types.ID
+}
+
 // Topic constants
 
 const (
@@ -120,7 +124,8 @@ type ProfileCursorPage struct {
 // Query name constants
 
 const (
-	QueryGetProfile   = "users.GetProfile"
-	QueryGetProfiles  = "users.GetProfiles"
-	QueryGetFollowing = "users.GetFollowing"
+	QueryGetProfile     = "users.GetProfile"
+	QueryGetProfiles    = "users.GetProfiles"
+	QueryGetFollowing   = "users.GetFollowing"
+	QueryGetFollowerIDs = "users.GetFollowerIDs"
 )

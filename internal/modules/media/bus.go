@@ -17,9 +17,9 @@ func RegisterQueries(b bus.Bus, service *Service) error {
 
 func handleGetByIDs(service *Service) func(req any) (any, error) {
 	return func(req any) (any, error) {
-		q, ok := req.(GetByIDsQuery)
-		if !ok {
-			return nil, fmt.Errorf("media: GetByIDs: invalid request type")
+		q, err := bus.Convert[GetByIDsQuery](req)
+		if err != nil {
+			return nil, fmt.Errorf("media: GetByIDs: invalid request type: %w", err)
 		}
 
 		ctx := context.Background()

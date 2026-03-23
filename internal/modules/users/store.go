@@ -411,6 +411,16 @@ func (s *Store) GetFollowingIDs(ctx context.Context, userID types.ID) ([]types.I
 	return ids, nil
 }
 
+func (s *Store) GetFollowerIDs(ctx context.Context, userID types.ID) ([]types.ID, error) {
+	const q = `SELECT follower_id FROM users.follows WHERE following_id = $1`
+
+	var ids []types.ID
+	if err := s.db.Conn.SelectContext(ctx, &ids, q, userID); err != nil {
+		return nil, fmt.Errorf("store: get follower ids: %w", err)
+	}
+	return ids, nil
+}
+
 // escapeILIKE escapes ILIKE wildcard characters in user input.
 func escapeILIKE(s string) string {
 	s = strings.ReplaceAll(s, `\`, `\\`)

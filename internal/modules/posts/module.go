@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/radni/soapbox/internal/core"
+	"github.com/radni/soapbox/internal/core/bus"
 	"github.com/radni/soapbox/internal/modules/posts/migrations"
 )
 
@@ -21,9 +22,9 @@ func Load(ctx context.Context, deps core.ModuleDeps) error {
 	}
 
 	if err := deps.Bus.Subscribe(usersTopicProfileUpdated, func(event any) {
-		e, ok := event.(userProfileUpdatedEvent)
-		if !ok {
-			deps.Logger.Error("posts: profile_updated: invalid event type")
+		e, err := bus.Convert[userProfileUpdatedEvent](event)
+		if err != nil {
+			deps.Logger.Error("posts: profile_updated: invalid event type", "error", err)
 			return
 		}
 		service.HandleProfileUpdated(e)
