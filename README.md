@@ -1,4 +1,16 @@
-# soapbox
+> **Note**
+> This is an experiment in getting AI agents to generate consistent, well-structured, and well-architected code 
+> 
+> The codebase follows strict modular monolith architecture with enforced module boundaries
+> no cross-module imports, no cross-schema queries, all inter-module communication via an event bus. 
+> 
+>Each module is fully isolated with its own routes, services, repositories, and tests. Dependency injection is used throughout, config is bundled into dedicated objects, and all wiring happens at a single composition root. 
+> 
+>Code style is consistent across every module: same patterns, same naming conventions, same error handling 
+> 
+> it reads like one person wrote the entire thing.
+
+# Soapbox
 
 A pre-2022 Twitter clone — chronological microblogging platform. No algorithms, no ads, just posts in order.
 
