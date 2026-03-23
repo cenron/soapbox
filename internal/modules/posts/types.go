@@ -157,3 +157,50 @@ type PostCursorPage struct {
 	NextCursor string         `json:"next_cursor,omitempty"`
 	HasMore    bool           `json:"has_more"`
 }
+
+// Bus contract mirrors — local copies of types owned by other modules.
+// These avoid cross-module imports. The bus uses any-typed payloads,
+// so the consumer must match the publisher's struct layout exactly.
+
+// Mirrors users.ProfileResponse (users module owns this contract).
+type userProfileResponse struct {
+	ID          types.ID `json:"id"`
+	Username    string   `json:"username"`
+	DisplayName string   `json:"display_name"`
+	AvatarURL   string   `json:"avatar_url"`
+	Verified    bool     `json:"verified"`
+}
+
+// Mirrors users.GetProfileQuery (users module owns this contract).
+type userGetProfileQuery struct {
+	UserID   types.ID
+	ViewerID *types.ID
+}
+
+// Mirrors users.ProfileUpdatedEvent (users module owns this contract).
+type userProfileUpdatedEvent struct {
+	UserID      types.ID `json:"user_id"`
+	Username    string   `json:"username"`
+	DisplayName string   `json:"display_name"`
+	AvatarURL   string   `json:"avatar_url"`
+	Verified    bool     `json:"verified"`
+}
+
+// Mirrors media.GetByIDsQuery (media module owns this contract).
+type mediaGetByIDsQuery struct {
+	IDs []types.ID
+}
+
+// Mirrors media.UploadResponse (media module owns this contract).
+type mediaUploadResponse struct {
+	ID          types.ID `json:"id"`
+	URL         string   `json:"url"`
+	ContentType string   `json:"content_type"`
+}
+
+// External module topic/query name constants (string references only).
+const (
+	usersQueryGetProfile     = "users.GetProfile"
+	usersTopicProfileUpdated = "users.profile_updated"
+	mediaQueryGetByIDs       = "media.GetByIDs"
+)

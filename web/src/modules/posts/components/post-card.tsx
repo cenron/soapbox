@@ -91,11 +91,11 @@ export function PostCard({ post }: PostCardProps) {
               {media
                 .slice()
                 .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
-                .map((m) => (
+                .map((m, i) => (
                   <ImageDisplay
                     key={m.id}
                     src={m.media_url ?? ""}
-                    alt=""
+                    alt={`Image attachment ${i + 1}`}
                     className="aspect-video"
                   />
                 ))}

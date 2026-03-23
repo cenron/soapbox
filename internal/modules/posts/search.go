@@ -15,7 +15,7 @@ func (s *Service) SearchPosts(ctx context.Context, query string, viewerID *types
 		return nil, err
 	}
 
-	return s.buildPostCursorPage(ctx, posts, hasMore, viewerID, false)
+	return s.buildPostCursorPage(ctx, posts, hasMore, viewerID)
 }
 
 // SearchByHashtag returns posts containing a specific hashtag.
@@ -25,7 +25,7 @@ func (s *Service) SearchByHashtag(ctx context.Context, tag string, viewerID *typ
 		return nil, err
 	}
 
-	return s.buildPostCursorPage(ctx, posts, hasMore, viewerID, false)
+	return s.buildPostCursorPage(ctx, posts, hasMore, viewerID)
 }
 
 // Store search operations

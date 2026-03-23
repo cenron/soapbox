@@ -3,7 +3,9 @@ package posts
 import (
 	"context"
 	"io"
+	"net"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
 	"time"
@@ -14,6 +16,15 @@ import (
 var urlRegex = regexp.MustCompile(`https?://[^\s<>"]+`)
 
 const linkPreviewTimeout = 5 * time.Second
+
+// previewClient is a dedicated HTTP client for link preview fetching.
+// It disables redirects and uses a short timeout to mitigate SSRF risk.
+var previewClient = &http.Client{
+	Timeout: linkPreviewTimeout,
+	CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
+		return http.ErrUseLastResponse
+	},
+}
 
 type linkPreviewData struct {
 	URL         string
@@ -28,6 +39,10 @@ func extractFirstURL(body string) string {
 }
 
 func fetchLinkPreview(ctx context.Context, rawURL string) *linkPreviewData {
+	if !isSafeURL(rawURL) {
+		return nil
+	}
+
 	ctx, cancel := context.WithTimeout(ctx, linkPreviewTimeout)
 	defer cancel()
 
@@ -37,7 +52,7 @@ func fetchLinkPreview(ctx context.Context, rawURL string) *linkPreviewData {
 	}
 	req.Header.Set("User-Agent", "SoapboxBot/1.0")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := previewClient.Do(req)
 	if err != nil {
 		return nil
 	}
@@ -58,6 +73,31 @@ func fetchLinkPreview(ctx context.Context, rawURL string) *linkPreviewData {
 	}
 
 	return parseHTMLMeta(rawURL, string(body))
+}
+
+// isSafeURL rejects URLs that target private/loopback/link-local IP ranges.
+func isSafeURL(rawURL string) bool {
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return false
+	}
+
+	if parsed.Scheme != "http" && parsed.Scheme != "https" {
+		return false
+	}
+
+	hostname := parsed.Hostname()
+
+	ip := net.ParseIP(hostname)
+	if ip != nil {
+		return !ip.IsLoopback() && !ip.IsPrivate() && !ip.IsLinkLocalUnicast() && !ip.IsLinkLocalMulticast()
+	}
+
+	if hostname == "localhost" {
+		return false
+	}
+
+	return true
 }
 
 func parseHTMLMeta(rawURL, htmlBody string) *linkPreviewData {

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Image } from "lucide-react"
 import {
@@ -27,7 +27,6 @@ export function PostComposer({ parentId, onSuccess }: PostComposerProps) {
   const [body, setBody] = useState("")
   const [mediaIds, setMediaIds] = useState<string[]>([])
   const [showImageUpload, setShowImageUpload] = useState(false)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const mutation = useMutation({
     ...postPostsMutation(),
@@ -90,7 +89,6 @@ export function PostComposer({ parentId, onSuccess }: PostComposerProps) {
 
         <div className="flex-1 space-y-3">
           <Textarea
-            ref={textareaRef}
             value={body}
             onChange={(e) => setBody(e.target.value)}
             onKeyDown={handleKeyDown}

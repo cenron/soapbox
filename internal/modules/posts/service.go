@@ -10,8 +10,6 @@ import (
 	"github.com/radni/soapbox/internal/core/bus"
 	"github.com/radni/soapbox/internal/core/db"
 	"github.com/radni/soapbox/internal/core/types"
-	"github.com/radni/soapbox/internal/modules/media"
-	"github.com/radni/soapbox/internal/modules/users"
 )
 
 const maxBodyLength = 280
@@ -37,6 +35,10 @@ func NewService(database *db.DB, store *Store, b bus.Bus, logger *slog.Logger) *
 func (s *Service) CreatePost(ctx context.Context, authorID types.ID, req CreatePostRequest) (*PostResponse, error) {
 	if err := validateCreatePostRequest(req); err != nil {
 		return nil, err
+	}
+
+	if req.RepostOfID != nil {
+		return nil, types.NewValidation("use the repost endpoint to create reposts")
 	}
 
 	author, err := s.getAuthorProfile(authorID)
@@ -67,15 +69,12 @@ func (s *Service) CreatePost(ctx context.Context, authorID types.ID, req CreateP
 		if err != nil {
 			return nil, types.NewValidation("invalid parent_id")
 		}
-		post.ParentID = &parentID
-	}
 
-	if req.RepostOfID != nil {
-		repostOfID, err := types.ParseID(*req.RepostOfID)
-		if err != nil {
-			return nil, types.NewValidation("invalid repost_of_id")
+		if _, err := s.store.GetPostByID(ctx, parentID); err != nil {
+			return nil, types.NewValidation("parent post does not exist")
 		}
-		post.RepostOfID = &repostOfID
+
+		post.ParentID = &parentID
 	}
 
 	mediaItems, err := s.resolveMedia(req.MediaIDs)
@@ -156,7 +155,6 @@ func (s *Service) CreatePost(ctx context.Context, authorID types.ID, req CreateP
 		AuthorUsername: author.Username,
 		Body:           req.Body,
 		ParentID:       post.ParentID,
-		RepostOfID:     post.RepostOfID,
 		CreatedAt:      now,
 	}); err != nil {
 		s.logger.Warn("service: create post: publish event failed", "error", err)
@@ -173,11 +171,7 @@ func (s *Service) GetPost(ctx context.Context, id types.ID, viewerID *types.ID) 
 		return nil, err
 	}
 
-	resp, err := s.enrichPost(ctx, post, viewerID)
-	if err != nil {
-		return nil, err
-	}
-	return resp, nil
+	return s.enrichPost(ctx, post, viewerID)
 }
 
 // DeletePost deletes a post if the caller is the author.
@@ -192,6 +186,7 @@ func (s *Service) DeletePost(ctx context.Context, postID, callerID types.ID) err
 	}
 
 	parentID := post.ParentID
+	repostOfID := post.RepostOfID
 	authorID := post.AuthorID
 
 	if err := s.store.DeletePost(ctx, postID); err != nil {
@@ -201,6 +196,12 @@ func (s *Service) DeletePost(ctx context.Context, postID, callerID types.ID) err
 	if parentID != nil {
 		if err := s.store.DecrementReplyCount(ctx, *parentID); err != nil {
 			s.logger.Warn("service: delete post: decrement reply count failed", "error", err)
+		}
+	}
+
+	if repostOfID != nil {
+		if _, err := s.store.DecrementRepostCount(ctx, *repostOfID); err != nil {
+			s.logger.Warn("service: delete post: decrement repost count failed", "error", err)
 		}
 	}
 
@@ -226,7 +227,7 @@ func (s *Service) GetReplies(ctx context.Context, parentID types.ID, viewerID *t
 		return nil, err
 	}
 
-	return s.buildPostCursorPage(ctx, posts, hasMore, viewerID, true)
+	return s.buildPostCursorPage(ctx, posts, hasMore, viewerID)
 }
 
 // GetPostsByAuthor returns a cursor-paginated list of root posts by an author.
@@ -236,7 +237,7 @@ func (s *Service) GetPostsByAuthor(ctx context.Context, authorID types.ID, viewe
 		return nil, err
 	}
 
-	return s.buildPostCursorPage(ctx, posts, hasMore, viewerID, false)
+	return s.buildPostCursorPage(ctx, posts, hasMore, viewerID)
 }
 
 // LikePost adds a like and returns updated counts.
@@ -246,11 +247,15 @@ func (s *Service) LikePost(ctx context.Context, postID, userID types.ID) (*LikeR
 		return nil, err
 	}
 
-	if err := s.store.CreateLike(ctx, postID, userID); err != nil {
-		return nil, err
-	}
+	var count int
 
-	count, err := s.store.IncrementLikeCount(ctx, postID)
+	err = s.db.WithTx(ctx, func(tx *sqlx.Tx) error {
+		if err := s.store.CreateLikeTx(ctx, tx, postID, userID); err != nil {
+			return err
+		}
+		count, err = s.store.IncrementLikeCountTx(ctx, tx, postID)
+		return err
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -274,11 +279,16 @@ func (s *Service) LikePost(ctx context.Context, postID, userID types.ID) (*LikeR
 
 // UnlikePost removes a like and returns updated counts.
 func (s *Service) UnlikePost(ctx context.Context, postID, userID types.ID) (*LikeResponse, error) {
-	if err := s.store.DeleteLike(ctx, postID, userID); err != nil {
-		return nil, err
-	}
+	var count int
 
-	count, err := s.store.DecrementLikeCount(ctx, postID)
+	err := s.db.WithTx(ctx, func(tx *sqlx.Tx) error {
+		if err := s.store.DeleteLikeTx(ctx, tx, postID, userID); err != nil {
+			return err
+		}
+		var err error
+		count, err = s.store.DecrementLikeCountTx(ctx, tx, postID)
+		return err
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -330,14 +340,15 @@ func (s *Service) RepostPost(ctx context.Context, postID, userID types.ID) (*Rep
 		UpdatedAt:         now,
 	}
 
-	err = s.db.WithTx(ctx, func(tx *sqlx.Tx) error {
-		return s.store.CreatePost(ctx, tx, repost)
-	})
-	if err != nil {
-		return nil, err
-	}
+	var count int
 
-	count, err := s.store.IncrementRepostCount(ctx, postID)
+	err = s.db.WithTx(ctx, func(tx *sqlx.Tx) error {
+		if err := s.store.CreatePost(ctx, tx, repost); err != nil {
+			return err
+		}
+		count, err = s.store.IncrementRepostCountTx(ctx, tx, postID)
+		return err
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -389,11 +400,11 @@ func (s *Service) GetUserPosts(ctx context.Context, username string, viewerID *t
 		return nil, err
 	}
 
-	return s.buildPostCursorPage(ctx, posts, hasMore, viewerID, false)
+	return s.buildPostCursorPage(ctx, posts, hasMore, viewerID)
 }
 
 // HandleProfileUpdated syncs denormalized author fields when a user updates their profile.
-func (s *Service) HandleProfileUpdated(event users.ProfileUpdatedEvent) {
+func (s *Service) HandleProfileUpdated(event userProfileUpdatedEvent) {
 	ctx := context.Background()
 
 	if err := s.store.UpdateAuthorDenorm(ctx, event.UserID, event.Username, event.DisplayName, event.AvatarURL, event.Verified); err != nil {
@@ -406,15 +417,15 @@ func (s *Service) HandleProfileUpdated(event users.ProfileUpdatedEvent) {
 
 // --- helpers ---
 
-func (s *Service) getAuthorProfile(userID types.ID) (*users.ProfileResponse, error) {
-	result, err := s.bus.Query(users.QueryGetProfile, users.GetProfileQuery{
+func (s *Service) getAuthorProfile(userID types.ID) (*userProfileResponse, error) {
+	result, err := s.bus.Query(usersQueryGetProfile, userGetProfileQuery{
 		UserID: userID,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	profile, ok := result.(users.ProfileResponse)
+	profile, ok := result.(userProfileResponse)
 	if !ok {
 		return nil, fmt.Errorf("service: unexpected profile response type")
 	}
@@ -444,12 +455,12 @@ func (s *Service) resolveMedia(mediaIDs []string) ([]resolvedMedia, error) {
 		ids[i] = id
 	}
 
-	result, err := s.bus.Query(media.QueryGetByIDs, media.GetByIDsQuery{IDs: ids})
+	result, err := s.bus.Query(mediaQueryGetByIDs, mediaGetByIDsQuery{IDs: ids})
 	if err != nil {
 		return nil, fmt.Errorf("service: resolve media: %w", err)
 	}
 
-	uploads, ok := result.([]media.UploadResponse)
+	uploads, ok := result.([]mediaUploadResponse)
 	if !ok {
 		return nil, fmt.Errorf("service: resolve media: unexpected response type")
 	}
@@ -552,7 +563,7 @@ func (s *Service) enrichPosts(ctx context.Context, posts []Post, viewerID *types
 	return responses, nil
 }
 
-func (s *Service) buildPostCursorPage(ctx context.Context, posts []Post, hasMore bool, viewerID *types.ID, ascending bool) (*types.CursorPage[PostResponse], error) {
+func (s *Service) buildPostCursorPage(ctx context.Context, posts []Post, hasMore bool, viewerID *types.ID) (*types.CursorPage[PostResponse], error) {
 	responses, err := s.enrichPosts(ctx, posts, viewerID)
 	if err != nil {
 		return nil, err

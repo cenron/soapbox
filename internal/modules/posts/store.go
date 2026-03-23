@@ -405,10 +405,10 @@ func (s *Store) GetHashtagsByPostIDs(ctx context.Context, postIDs []types.ID) (m
 
 // Like operations
 
-func (s *Store) CreateLike(ctx context.Context, postID, userID types.ID) error {
+func (s *Store) CreateLikeTx(ctx context.Context, tx *sqlx.Tx, postID, userID types.ID) error {
 	const q = `INSERT INTO posts.likes (post_id, user_id, created_at) VALUES ($1, $2, $3)`
 
-	_, err := s.db.Conn.ExecContext(ctx, q, postID, userID, time.Now().UTC())
+	_, err := tx.ExecContext(ctx, q, postID, userID, time.Now().UTC())
 	if err != nil {
 		if isUniqueViolation(err) {
 			return types.NewConflict("already liked")
@@ -418,10 +418,10 @@ func (s *Store) CreateLike(ctx context.Context, postID, userID types.ID) error {
 	return nil
 }
 
-func (s *Store) DeleteLike(ctx context.Context, postID, userID types.ID) error {
+func (s *Store) DeleteLikeTx(ctx context.Context, tx *sqlx.Tx, postID, userID types.ID) error {
 	const q = `DELETE FROM posts.likes WHERE post_id = $1 AND user_id = $2`
 
-	res, err := s.db.Conn.ExecContext(ctx, q, postID, userID)
+	res, err := tx.ExecContext(ctx, q, postID, userID)
 	if err != nil {
 		return fmt.Errorf("store: delete like: %w", err)
 	}
@@ -436,21 +436,21 @@ func (s *Store) DeleteLike(ctx context.Context, postID, userID types.ID) error {
 	return nil
 }
 
-func (s *Store) IncrementLikeCount(ctx context.Context, postID types.ID) (int, error) {
+func (s *Store) IncrementLikeCountTx(ctx context.Context, tx *sqlx.Tx, postID types.ID) (int, error) {
 	const q = `UPDATE posts.posts SET like_count = like_count + 1 WHERE id = $1 RETURNING like_count`
 
 	var count int
-	if err := s.db.Conn.GetContext(ctx, &count, q, postID); err != nil {
+	if err := tx.GetContext(ctx, &count, q, postID); err != nil {
 		return 0, fmt.Errorf("store: increment like count: %w", err)
 	}
 	return count, nil
 }
 
-func (s *Store) DecrementLikeCount(ctx context.Context, postID types.ID) (int, error) {
+func (s *Store) DecrementLikeCountTx(ctx context.Context, tx *sqlx.Tx, postID types.ID) (int, error) {
 	const q = `UPDATE posts.posts SET like_count = GREATEST(like_count - 1, 0) WHERE id = $1 RETURNING like_count`
 
 	var count int
-	if err := s.db.Conn.GetContext(ctx, &count, q, postID); err != nil {
+	if err := tx.GetContext(ctx, &count, q, postID); err != nil {
 		return 0, fmt.Errorf("store: decrement like count: %w", err)
 	}
 	return count, nil
@@ -556,6 +556,16 @@ func (s *Store) IncrementRepostCount(ctx context.Context, postID types.ID) (int,
 	var count int
 	if err := s.db.Conn.GetContext(ctx, &count, q, postID); err != nil {
 		return 0, fmt.Errorf("store: increment repost count: %w", err)
+	}
+	return count, nil
+}
+
+func (s *Store) IncrementRepostCountTx(ctx context.Context, tx *sqlx.Tx, postID types.ID) (int, error) {
+	const q = `UPDATE posts.posts SET repost_count = repost_count + 1 WHERE id = $1 RETURNING repost_count`
+
+	var count int
+	if err := tx.GetContext(ctx, &count, q, postID); err != nil {
+		return 0, fmt.Errorf("store: increment repost count tx: %w", err)
 	}
 	return count, nil
 }
