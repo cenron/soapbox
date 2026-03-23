@@ -1,9 +1,11 @@
 import { Link, useLocation } from "react-router"
 import { useAuth } from "@/shared/auth/auth-context"
 import { useMediaQuery } from "@/shared/hooks/use-media-query"
+import { useNotificationBadge } from "@/modules/notifications/hooks/use-notification-badge"
 import { Button } from "@/shared/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/shared/ui/sheet"
 import { Separator } from "@/shared/ui/separator"
+import { Badge } from "@/shared/ui/badge"
 import { cn } from "@/shared/lib/utils"
 
 interface NavItem {
@@ -30,6 +32,7 @@ function NavLinks({ onClick }: { onClick?: () => void }) {
   const location = useLocation()
   const { user } = useAuth()
   const navItems = useNavItems()
+  const { count: notificationCount } = useNotificationBadge()
 
   return (
     <nav className="flex flex-col gap-1">
@@ -42,6 +45,11 @@ function NavLinks({ onClick }: { onClick?: () => void }) {
         >
           <Link to={item.to} onClick={onClick}>
             {item.label}
+            {item.to === "/notifications" && notificationCount > 0 && (
+              <Badge variant="destructive" className="ml-auto h-5 min-w-5 px-1 text-xs">
+                {notificationCount > 99 ? "99+" : notificationCount}
+              </Badge>
+            )}
           </Link>
         </Button>
       ))}

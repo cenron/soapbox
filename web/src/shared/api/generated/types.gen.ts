@@ -70,6 +70,24 @@ export type MediaUploadUrlResponse = {
     upload_url?: string;
 };
 
+export type NotificationsNotificationCursorPage = {
+    has_more?: boolean;
+    items?: Array<NotificationsNotificationResponse>;
+    next_cursor?: string;
+};
+
+export type NotificationsNotificationResponse = {
+    actor_avatar_url?: string;
+    actor_display_name?: string;
+    actor_id?: string;
+    actor_username?: string;
+    created_at?: string;
+    id?: string;
+    post_id?: string;
+    read?: boolean;
+    type?: string;
+};
+
 export type PostsCreatePostRequest = {
     body?: string;
     media_ids?: Array<string>;
@@ -431,6 +449,107 @@ export type PostMediaByIdConfirmResponses = {
 };
 
 export type PostMediaByIdConfirmResponse = PostMediaByIdConfirmResponses[keyof PostMediaByIdConfirmResponses];
+
+export type GetNotificationsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Pagination cursor
+         */
+        cursor?: string;
+        /**
+         * Page size (default 20, max 100)
+         */
+        limit?: number;
+    };
+    url: '/notifications';
+};
+
+export type GetNotificationsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: TypesAppError;
+    /**
+     * Internal server error
+     */
+    500: TypesAppError;
+};
+
+export type GetNotificationsError = GetNotificationsErrors[keyof GetNotificationsErrors];
+
+export type GetNotificationsResponses = {
+    /**
+     * OK
+     */
+    200: NotificationsNotificationCursorPage;
+};
+
+export type GetNotificationsResponse = GetNotificationsResponses[keyof GetNotificationsResponses];
+
+export type PutNotificationsReadAllData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/notifications/read-all';
+};
+
+export type PutNotificationsReadAllErrors = {
+    /**
+     * Not authenticated
+     */
+    401: TypesAppError;
+    /**
+     * Internal server error
+     */
+    500: TypesAppError;
+};
+
+export type PutNotificationsReadAllError = PutNotificationsReadAllErrors[keyof PutNotificationsReadAllErrors];
+
+export type PutNotificationsReadAllResponses = {
+    /**
+     * All notifications marked as read
+     */
+    204: unknown;
+};
+
+export type PutNotificationsByIdReadData = {
+    body?: never;
+    path: {
+        /**
+         * Notification ID
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/notifications/{id}/read';
+};
+
+export type PutNotificationsByIdReadErrors = {
+    /**
+     * Not authenticated
+     */
+    401: TypesAppError;
+    /**
+     * Notification not found
+     */
+    404: TypesAppError;
+    /**
+     * Internal server error
+     */
+    500: TypesAppError;
+};
+
+export type PutNotificationsByIdReadError = PutNotificationsByIdReadErrors[keyof PutNotificationsByIdReadErrors];
+
+export type PutNotificationsByIdReadResponses = {
+    /**
+     * Notification marked as read
+     */
+    204: unknown;
+};
 
 export type PostPostsData = {
     /**

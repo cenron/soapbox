@@ -3,8 +3,8 @@
 import { type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { deletePostsById, deletePostsByIdLike, deletePostsByIdRepost, deleteUsersByUsernameFollow, getFeed, getPostsById, getPostsByIdReplies, getPostsSearch, getUsersByUsername, getUsersByUsernameFollowers, getUsersByUsernameFollowing, getUsersByUsernamePosts, getUsersSearch, type Options, postAuthLogin, postAuthLogout, postAuthRefresh, postAuthRegister, postMediaByIdConfirm, postMediaUploadUrl, postPosts, postPostsByIdLike, postPostsByIdRepost, postUsersByUsernameFollow, putUsersMe } from '../sdk.gen';
-import type { DeletePostsByIdData, DeletePostsByIdError, DeletePostsByIdLikeData, DeletePostsByIdLikeError, DeletePostsByIdLikeResponse, DeletePostsByIdRepostData, DeletePostsByIdRepostError, DeletePostsByIdRepostResponse, DeleteUsersByUsernameFollowData, DeleteUsersByUsernameFollowError, GetFeedData, GetFeedError, GetFeedResponse, GetPostsByIdData, GetPostsByIdError, GetPostsByIdRepliesData, GetPostsByIdRepliesError, GetPostsByIdRepliesResponse, GetPostsByIdResponse, GetPostsSearchData, GetPostsSearchError, GetPostsSearchResponse, GetUsersByUsernameData, GetUsersByUsernameError, GetUsersByUsernameFollowersData, GetUsersByUsernameFollowersError, GetUsersByUsernameFollowersResponse, GetUsersByUsernameFollowingData, GetUsersByUsernameFollowingError, GetUsersByUsernameFollowingResponse, GetUsersByUsernamePostsData, GetUsersByUsernamePostsError, GetUsersByUsernamePostsResponse, GetUsersByUsernameResponse, GetUsersSearchData, GetUsersSearchError, GetUsersSearchResponse, PostAuthLoginData, PostAuthLoginError, PostAuthLoginResponse, PostAuthLogoutData, PostAuthLogoutError, PostAuthRefreshData, PostAuthRefreshError, PostAuthRefreshResponse, PostAuthRegisterData, PostAuthRegisterError, PostAuthRegisterResponse, PostMediaByIdConfirmData, PostMediaByIdConfirmError, PostMediaByIdConfirmResponse, PostMediaUploadUrlData, PostMediaUploadUrlError, PostMediaUploadUrlResponse, PostPostsByIdLikeData, PostPostsByIdLikeError, PostPostsByIdLikeResponse, PostPostsByIdRepostData, PostPostsByIdRepostError, PostPostsByIdRepostResponse, PostPostsData, PostPostsError, PostPostsResponse, PostUsersByUsernameFollowData, PostUsersByUsernameFollowError, PutUsersMeData, PutUsersMeError, PutUsersMeResponse } from '../types.gen';
+import { deletePostsById, deletePostsByIdLike, deletePostsByIdRepost, deleteUsersByUsernameFollow, getFeed, getNotifications, getPostsById, getPostsByIdReplies, getPostsSearch, getUsersByUsername, getUsersByUsernameFollowers, getUsersByUsernameFollowing, getUsersByUsernamePosts, getUsersSearch, type Options, postAuthLogin, postAuthLogout, postAuthRefresh, postAuthRegister, postMediaByIdConfirm, postMediaUploadUrl, postPosts, postPostsByIdLike, postPostsByIdRepost, postUsersByUsernameFollow, putNotificationsByIdRead, putNotificationsReadAll, putUsersMe } from '../sdk.gen';
+import type { DeletePostsByIdData, DeletePostsByIdError, DeletePostsByIdLikeData, DeletePostsByIdLikeError, DeletePostsByIdLikeResponse, DeletePostsByIdRepostData, DeletePostsByIdRepostError, DeletePostsByIdRepostResponse, DeleteUsersByUsernameFollowData, DeleteUsersByUsernameFollowError, GetFeedData, GetFeedError, GetFeedResponse, GetNotificationsData, GetNotificationsError, GetNotificationsResponse, GetPostsByIdData, GetPostsByIdError, GetPostsByIdRepliesData, GetPostsByIdRepliesError, GetPostsByIdRepliesResponse, GetPostsByIdResponse, GetPostsSearchData, GetPostsSearchError, GetPostsSearchResponse, GetUsersByUsernameData, GetUsersByUsernameError, GetUsersByUsernameFollowersData, GetUsersByUsernameFollowersError, GetUsersByUsernameFollowersResponse, GetUsersByUsernameFollowingData, GetUsersByUsernameFollowingError, GetUsersByUsernameFollowingResponse, GetUsersByUsernamePostsData, GetUsersByUsernamePostsError, GetUsersByUsernamePostsResponse, GetUsersByUsernameResponse, GetUsersSearchData, GetUsersSearchError, GetUsersSearchResponse, PostAuthLoginData, PostAuthLoginError, PostAuthLoginResponse, PostAuthLogoutData, PostAuthLogoutError, PostAuthRefreshData, PostAuthRefreshError, PostAuthRefreshResponse, PostAuthRegisterData, PostAuthRegisterError, PostAuthRegisterResponse, PostMediaByIdConfirmData, PostMediaByIdConfirmError, PostMediaByIdConfirmResponse, PostMediaUploadUrlData, PostMediaUploadUrlError, PostMediaUploadUrlResponse, PostPostsByIdLikeData, PostPostsByIdLikeError, PostPostsByIdLikeResponse, PostPostsByIdRepostData, PostPostsByIdRepostError, PostPostsByIdRepostResponse, PostPostsData, PostPostsError, PostPostsResponse, PostUsersByUsernameFollowData, PostUsersByUsernameFollowError, PutNotificationsByIdReadData, PutNotificationsByIdReadError, PutNotificationsReadAllData, PutNotificationsReadAllError, PutUsersMeData, PutUsersMeError, PutUsersMeResponse } from '../types.gen';
 
 /**
  * Log in
@@ -221,6 +221,93 @@ export const postMediaByIdConfirmMutation = (options?: Partial<Options<PostMedia
     const mutationOptions: UseMutationOptions<PostMediaByIdConfirmResponse, PostMediaByIdConfirmError, Options<PostMediaByIdConfirmData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await postMediaByIdConfirm({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getNotificationsQueryKey = (options?: Options<GetNotificationsData>) => createQueryKey('getNotifications', options);
+
+/**
+ * List notifications
+ *
+ * Returns the authenticated user's notifications, newest first, with cursor-based pagination.
+ */
+export const getNotificationsOptions = (options?: Options<GetNotificationsData>) => queryOptions<GetNotificationsResponse, GetNotificationsError, GetNotificationsResponse, ReturnType<typeof getNotificationsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getNotifications({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getNotificationsQueryKey(options)
+});
+
+export const getNotificationsInfiniteQueryKey = (options?: Options<GetNotificationsData>): QueryKey<Options<GetNotificationsData>> => createQueryKey('getNotifications', options, true);
+
+/**
+ * List notifications
+ *
+ * Returns the authenticated user's notifications, newest first, with cursor-based pagination.
+ */
+export const getNotificationsInfiniteOptions = (options?: Options<GetNotificationsData>) => infiniteQueryOptions<GetNotificationsResponse, GetNotificationsError, InfiniteData<GetNotificationsResponse>, QueryKey<Options<GetNotificationsData>>, string | Pick<QueryKey<Options<GetNotificationsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+// @ts-ignore
+{
+    queryFn: async ({ pageParam, queryKey, signal }) => {
+        // @ts-ignore
+        const page: Pick<QueryKey<Options<GetNotificationsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+            query: {
+                cursor: pageParam
+            }
+        };
+        const params = createInfiniteParams(queryKey, page);
+        const { data } = await getNotifications({
+            ...options,
+            ...params,
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getNotificationsInfiniteQueryKey(options)
+});
+
+/**
+ * Mark all notifications as read
+ *
+ * Marks all of the authenticated user's unread notifications as read.
+ */
+export const putNotificationsReadAllMutation = (options?: Partial<Options<PutNotificationsReadAllData>>): UseMutationOptions<unknown, PutNotificationsReadAllError, Options<PutNotificationsReadAllData>> => {
+    const mutationOptions: UseMutationOptions<unknown, PutNotificationsReadAllError, Options<PutNotificationsReadAllData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await putNotificationsReadAll({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Mark notification as read
+ *
+ * Marks a single notification as read. The notification must belong to the authenticated user.
+ */
+export const putNotificationsByIdReadMutation = (options?: Partial<Options<PutNotificationsByIdReadData>>): UseMutationOptions<unknown, PutNotificationsByIdReadError, Options<PutNotificationsByIdReadData>> => {
+    const mutationOptions: UseMutationOptions<unknown, PutNotificationsByIdReadError, Options<PutNotificationsByIdReadData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await putNotificationsByIdRead({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
