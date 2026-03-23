@@ -31,6 +31,10 @@ type UploadURLRequest struct {
 	Filename    string `json:"filename"`
 }
 
+type ConfirmUploadRequest struct {
+	Size int64 `json:"size"`
+}
+
 // Response types.
 
 type UploadURLResponse struct {

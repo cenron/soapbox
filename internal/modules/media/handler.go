@@ -72,8 +72,10 @@ func (h *Handler) handleUploadURL(w http.ResponseWriter, r *http.Request) {
 // @Summary      Confirm an upload
 // @Description  Marks a pending upload as ready. Call this after successfully uploading the file to the presigned URL.
 // @Tags         media
+// @Accept       json
 // @Produce      json
 // @Param        id path string true "Upload ID"
+// @Param        body body ConfirmUploadRequest true "Upload size"
 // @Success      200 {object} UploadResponse
 // @Failure      401 {object} types.AppError "Unauthorized"
 // @Failure      403 {object} types.AppError "Not the upload owner"
@@ -95,7 +97,12 @@ func (h *Handler) handleConfirmUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := h.service.ConfirmUpload(r.Context(), userID, uploadID)
+	var req ConfirmUploadRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		req.Size = 0
+	}
+
+	resp, err := h.service.ConfirmUpload(r.Context(), userID, uploadID, req.Size)
 	if err != nil {
 		httpkit.Error(w, err)
 		return

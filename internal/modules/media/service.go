@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/radni/soapbox/internal/core/config"
@@ -33,10 +31,6 @@ func (s *Service) RequestUpload(ctx context.Context, userID types.ID, req Upload
 	ext, err := validateContentType(req.ContentType)
 	if err != nil {
 		return nil, err
-	}
-
-	if ext == "" {
-		ext = extensionFromFilename(req.Filename)
 	}
 
 	uploadID, err := types.NewID()
@@ -76,7 +70,7 @@ func (s *Service) RequestUpload(ctx context.Context, userID types.ID, req Upload
 	}, nil
 }
 
-func (s *Service) ConfirmUpload(ctx context.Context, userID, uploadID types.ID) (*UploadResponse, error) {
+func (s *Service) ConfirmUpload(ctx context.Context, userID, uploadID types.ID, size int64) (*UploadResponse, error) {
 	upload, err := s.store.GetByID(ctx, uploadID)
 	if err != nil {
 		return nil, err
@@ -90,7 +84,7 @@ func (s *Service) ConfirmUpload(ctx context.Context, userID, uploadID types.ID) 
 		return nil, types.NewConflict("upload already confirmed")
 	}
 
-	if err := s.store.UpdateStatus(ctx, uploadID, StatusReady, 0); err != nil {
+	if err := s.store.UpdateStatus(ctx, uploadID, StatusReady, size); err != nil {
 		return nil, fmt.Errorf("service: confirm upload: %w", err)
 	}
 
@@ -98,7 +92,7 @@ func (s *Service) ConfirmUpload(ctx context.Context, userID, uploadID types.ID) 
 		ID:          upload.ID,
 		FileKey:     upload.FileKey,
 		ContentType: upload.ContentType,
-		Size:        upload.Size,
+		Size:        size,
 		Status:      StatusReady,
 		URL:         s.s3.ObjectURL(upload.FileKey),
 		CreatedAt:   upload.CreatedAt,
@@ -140,11 +134,3 @@ func validateContentType(ct string) (string, error) {
 	return ext, nil
 }
 
-func extensionFromFilename(filename string) string {
-	ext := strings.ToLower(filepath.Ext(filename))
-	if ext == "" {
-		return ".bin"
-	}
-
-	return ext
-}

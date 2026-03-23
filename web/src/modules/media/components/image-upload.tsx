@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useMutation } from "@tanstack/react-query"
 import {
   postMediaUploadUrlMutation,
@@ -37,12 +37,14 @@ export function ImageUpload({
   const confirmUpload = useMutation(postMediaByIdConfirmMutation())
 
   const resetState = useCallback(() => {
+    if (preview) URL.revokeObjectURL(preview)
     setFile(null)
     setPreview(null)
     setStatus("idle")
     setProgress(0)
     setError(null)
-  }, [])
+    if (inputRef.current) inputRef.current.value = ""
+  }, [preview])
 
   function validateFile(f: File): string | null {
     if (!accept.includes(f.type)) {
@@ -56,6 +58,12 @@ export function ImageUpload({
     return null
   }
 
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview)
+    }
+  }, [preview])
+
   function handleFileSelect(f: File) {
     const validationError = validateFile(f)
     if (validationError) {
@@ -63,6 +71,7 @@ export function ImageUpload({
       return
     }
 
+    if (preview) URL.revokeObjectURL(preview)
     setError(null)
     setFile(f)
     setPreview(URL.createObjectURL(f))
@@ -130,6 +139,7 @@ export function ImageUpload({
       setStatus("confirming")
       const confirmed = await confirmUpload.mutateAsync({
         path: { id: urlResp.id as string },
+        body: { size: file.size },
       })
 
       setStatus("complete")

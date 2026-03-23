@@ -87,7 +87,11 @@ export const postMediaUploadUrl = <ThrowOnError extends boolean = false>(options
 export const postMediaByIdConfirm = <ThrowOnError extends boolean = false>(options: Options<PostMediaByIdConfirmData, ThrowOnError>) => (options.client ?? client).post<PostMediaByIdConfirmResponses, PostMediaByIdConfirmErrors, ThrowOnError>({
     security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/media/{id}/confirm',
-    ...options
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 /**

@@ -64,26 +64,6 @@ func TestValidateContentType(t *testing.T) {
 	}
 }
 
-func TestExtensionFromFilename(t *testing.T) {
-	tests := []struct {
-		filename string
-		want     string
-	}{
-		{"photo.jpg", ".jpg"},
-		{"image.PNG", ".png"},
-		{"no-extension", ".bin"},
-		{"", ".bin"},
-		{"file.tar.gz", ".gz"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.filename, func(t *testing.T) {
-			got := extensionFromFilename(tt.filename)
-			assert.Equal(t, tt.want, got)
-		})
-	}
-}
-
 func TestUploadToResponse(t *testing.T) {
 	now := time.Now().UTC()
 	id, err := types.NewID()

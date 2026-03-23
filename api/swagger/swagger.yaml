@@ -2,6 +2,11 @@ basePath: /api/v1
 consumes:
 - application/json
 definitions:
+  media.ConfirmUploadRequest:
+    properties:
+      size:
+        type: integer
+    type: object
   media.UploadResponse:
     properties:
       content_type:
@@ -236,6 +241,8 @@ paths:
       - auth
   /media/{id}/confirm:
     post:
+      consumes:
+      - application/json
       description: Marks a pending upload as ready. Call this after successfully uploading
         the file to the presigned URL.
       parameters:
@@ -244,6 +251,12 @@ paths:
         name: id
         required: true
         type: string
+      - description: Upload size
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/media.ConfirmUploadRequest'
       produces:
       - application/json
       responses:

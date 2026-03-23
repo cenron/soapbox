@@ -4,6 +4,10 @@ export type ClientOptions = {
     baseUrl: 'http://localhost:8080/api/v1' | (string & {});
 };
 
+export type MediaConfirmUploadRequest = {
+    size?: number;
+};
+
 export type MediaUploadResponse = {
     content_type?: string;
     created_at?: string;
@@ -241,7 +245,10 @@ export type PostMediaUploadUrlResponses = {
 export type PostMediaUploadUrlResponse = PostMediaUploadUrlResponses[keyof PostMediaUploadUrlResponses];
 
 export type PostMediaByIdConfirmData = {
-    body?: never;
+    /**
+     * Upload size
+     */
+    body: MediaConfirmUploadRequest;
     path: {
         /**
          * Upload ID

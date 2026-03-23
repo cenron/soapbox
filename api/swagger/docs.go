@@ -253,6 +253,9 @@ const docTemplate = `{
                     }
                 ],
                 "description": "Marks a pending upload as ready. Call this after successfully uploading the file to the presigned URL.",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -267,6 +270,15 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Upload size",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/media.ConfirmUploadRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -669,6 +681,14 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "media.ConfirmUploadRequest": {
+            "type": "object",
+            "properties": {
+                "size": {
+                    "type": "integer"
+                }
+            }
+        },
         "media.UploadResponse": {
             "type": "object",
             "properties": {
