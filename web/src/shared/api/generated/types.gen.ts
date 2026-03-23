@@ -29,6 +29,66 @@ export type MediaUploadUrlResponse = {
     upload_url?: string;
 };
 
+export type PostsCreatePostRequest = {
+    body?: string;
+    media_ids?: Array<string>;
+    parent_id?: string;
+    repost_of_id?: string;
+};
+
+export type PostsLikeResponse = {
+    like_count?: number;
+    liked_by_me?: boolean;
+    post_id?: string;
+};
+
+export type PostsLinkPreviewResponse = {
+    description?: string;
+    image_url?: string;
+    title?: string;
+    url?: string;
+};
+
+export type PostsMediaResponse = {
+    id?: string;
+    media_type?: string;
+    media_url?: string;
+    position?: number;
+};
+
+export type PostsPostCursorPage = {
+    has_more?: boolean;
+    items?: Array<PostsPostResponse>;
+    next_cursor?: string;
+};
+
+export type PostsPostResponse = {
+    author_avatar_url?: string;
+    author_display_name?: string;
+    author_id?: string;
+    author_username?: string;
+    author_verified?: boolean;
+    body?: string;
+    created_at?: string;
+    hashtags?: Array<string>;
+    id?: string;
+    like_count?: number;
+    liked_by_me?: boolean;
+    link_preview?: PostsLinkPreviewResponse;
+    media?: Array<PostsMediaResponse>;
+    parent_id?: string;
+    reply_count?: number;
+    repost_count?: number;
+    repost_of_id?: string;
+    reposted_by_me?: boolean;
+};
+
+export type PostsRepostResponse = {
+    post_id?: string;
+    repost_count?: number;
+    reposted_by_me?: boolean;
+};
+
 export type TypesAppError = {
     detail?: string;
     message?: string;
@@ -292,6 +352,365 @@ export type PostMediaByIdConfirmResponses = {
 };
 
 export type PostMediaByIdConfirmResponse = PostMediaByIdConfirmResponses[keyof PostMediaByIdConfirmResponses];
+
+export type PostPostsData = {
+    /**
+     * Post content
+     */
+    body: PostsCreatePostRequest;
+    path?: never;
+    query?: never;
+    url: '/posts';
+};
+
+export type PostPostsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: TypesAppError;
+    /**
+     * Validation error
+     */
+    422: TypesAppError;
+    /**
+     * Internal server error
+     */
+    500: TypesAppError;
+};
+
+export type PostPostsError = PostPostsErrors[keyof PostPostsErrors];
+
+export type PostPostsResponses = {
+    /**
+     * Created
+     */
+    201: PostsPostResponse;
+};
+
+export type PostPostsResponse = PostPostsResponses[keyof PostPostsResponses];
+
+export type GetPostsSearchData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Search query
+         */
+        q: string;
+        /**
+         * Pagination cursor
+         */
+        cursor?: string;
+        /**
+         * Page size (default 20, max 100)
+         */
+        limit?: number;
+    };
+    url: '/posts/search';
+};
+
+export type GetPostsSearchErrors = {
+    /**
+     * Missing query parameter
+     */
+    422: TypesAppError;
+    /**
+     * Internal server error
+     */
+    500: TypesAppError;
+};
+
+export type GetPostsSearchError = GetPostsSearchErrors[keyof GetPostsSearchErrors];
+
+export type GetPostsSearchResponses = {
+    /**
+     * OK
+     */
+    200: PostsPostCursorPage;
+};
+
+export type GetPostsSearchResponse = GetPostsSearchResponses[keyof GetPostsSearchResponses];
+
+export type DeletePostsByIdData = {
+    body?: never;
+    path: {
+        /**
+         * Post ID
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/posts/{id}';
+};
+
+export type DeletePostsByIdErrors = {
+    /**
+     * Not authenticated
+     */
+    401: TypesAppError;
+    /**
+     * Not the post author
+     */
+    403: TypesAppError;
+    /**
+     * Post not found
+     */
+    404: TypesAppError;
+    /**
+     * Internal server error
+     */
+    500: TypesAppError;
+};
+
+export type DeletePostsByIdError = DeletePostsByIdErrors[keyof DeletePostsByIdErrors];
+
+export type DeletePostsByIdResponses = {
+    /**
+     * No Content
+     */
+    204: unknown;
+};
+
+export type GetPostsByIdData = {
+    body?: never;
+    path: {
+        /**
+         * Post ID
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/posts/{id}';
+};
+
+export type GetPostsByIdErrors = {
+    /**
+     * Post not found
+     */
+    404: TypesAppError;
+    /**
+     * Internal server error
+     */
+    500: TypesAppError;
+};
+
+export type GetPostsByIdError = GetPostsByIdErrors[keyof GetPostsByIdErrors];
+
+export type GetPostsByIdResponses = {
+    /**
+     * OK
+     */
+    200: PostsPostResponse;
+};
+
+export type GetPostsByIdResponse = GetPostsByIdResponses[keyof GetPostsByIdResponses];
+
+export type DeletePostsByIdLikeData = {
+    body?: never;
+    path: {
+        /**
+         * Post ID
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/posts/{id}/like';
+};
+
+export type DeletePostsByIdLikeErrors = {
+    /**
+     * Not authenticated
+     */
+    401: TypesAppError;
+    /**
+     * Like not found
+     */
+    404: TypesAppError;
+    /**
+     * Internal server error
+     */
+    500: TypesAppError;
+};
+
+export type DeletePostsByIdLikeError = DeletePostsByIdLikeErrors[keyof DeletePostsByIdLikeErrors];
+
+export type DeletePostsByIdLikeResponses = {
+    /**
+     * OK
+     */
+    200: PostsLikeResponse;
+};
+
+export type DeletePostsByIdLikeResponse = DeletePostsByIdLikeResponses[keyof DeletePostsByIdLikeResponses];
+
+export type PostPostsByIdLikeData = {
+    body?: never;
+    path: {
+        /**
+         * Post ID
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/posts/{id}/like';
+};
+
+export type PostPostsByIdLikeErrors = {
+    /**
+     * Not authenticated
+     */
+    401: TypesAppError;
+    /**
+     * Post not found
+     */
+    404: TypesAppError;
+    /**
+     * Already liked
+     */
+    409: TypesAppError;
+    /**
+     * Internal server error
+     */
+    500: TypesAppError;
+};
+
+export type PostPostsByIdLikeError = PostPostsByIdLikeErrors[keyof PostPostsByIdLikeErrors];
+
+export type PostPostsByIdLikeResponses = {
+    /**
+     * OK
+     */
+    200: PostsLikeResponse;
+};
+
+export type PostPostsByIdLikeResponse = PostPostsByIdLikeResponses[keyof PostPostsByIdLikeResponses];
+
+export type GetPostsByIdRepliesData = {
+    body?: never;
+    path: {
+        /**
+         * Parent post ID
+         */
+        id: string;
+    };
+    query?: {
+        /**
+         * Pagination cursor
+         */
+        cursor?: string;
+        /**
+         * Page size (default 20, max 100)
+         */
+        limit?: number;
+    };
+    url: '/posts/{id}/replies';
+};
+
+export type GetPostsByIdRepliesErrors = {
+    /**
+     * Post not found
+     */
+    404: TypesAppError;
+    /**
+     * Internal server error
+     */
+    500: TypesAppError;
+};
+
+export type GetPostsByIdRepliesError = GetPostsByIdRepliesErrors[keyof GetPostsByIdRepliesErrors];
+
+export type GetPostsByIdRepliesResponses = {
+    /**
+     * OK
+     */
+    200: PostsPostCursorPage;
+};
+
+export type GetPostsByIdRepliesResponse = GetPostsByIdRepliesResponses[keyof GetPostsByIdRepliesResponses];
+
+export type DeletePostsByIdRepostData = {
+    body?: never;
+    path: {
+        /**
+         * Original post ID
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/posts/{id}/repost';
+};
+
+export type DeletePostsByIdRepostErrors = {
+    /**
+     * Not authenticated
+     */
+    401: TypesAppError;
+    /**
+     * Repost not found
+     */
+    404: TypesAppError;
+    /**
+     * Internal server error
+     */
+    500: TypesAppError;
+};
+
+export type DeletePostsByIdRepostError = DeletePostsByIdRepostErrors[keyof DeletePostsByIdRepostErrors];
+
+export type DeletePostsByIdRepostResponses = {
+    /**
+     * OK
+     */
+    200: PostsRepostResponse;
+};
+
+export type DeletePostsByIdRepostResponse = DeletePostsByIdRepostResponses[keyof DeletePostsByIdRepostResponses];
+
+export type PostPostsByIdRepostData = {
+    body?: never;
+    path: {
+        /**
+         * Post ID to repost
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/posts/{id}/repost';
+};
+
+export type PostPostsByIdRepostErrors = {
+    /**
+     * Not authenticated
+     */
+    401: TypesAppError;
+    /**
+     * Post not found
+     */
+    404: TypesAppError;
+    /**
+     * Already reposted
+     */
+    409: TypesAppError;
+    /**
+     * Cannot repost a repost
+     */
+    422: TypesAppError;
+    /**
+     * Internal server error
+     */
+    500: TypesAppError;
+};
+
+export type PostPostsByIdRepostError = PostPostsByIdRepostErrors[keyof PostPostsByIdRepostErrors];
+
+export type PostPostsByIdRepostResponses = {
+    /**
+     * OK
+     */
+    200: PostsRepostResponse;
+};
+
+export type PostPostsByIdRepostResponse = PostPostsByIdRepostResponses[keyof PostPostsByIdRepostResponses];
 
 export type PutUsersMeData = {
     /**
@@ -566,3 +985,46 @@ export type GetUsersByUsernameFollowingResponses = {
 };
 
 export type GetUsersByUsernameFollowingResponse = GetUsersByUsernameFollowingResponses[keyof GetUsersByUsernameFollowingResponses];
+
+export type GetUsersByUsernamePostsData = {
+    body?: never;
+    path: {
+        /**
+         * Username
+         */
+        username: string;
+    };
+    query?: {
+        /**
+         * Pagination cursor
+         */
+        cursor?: string;
+        /**
+         * Page size (default 20, max 100)
+         */
+        limit?: number;
+    };
+    url: '/users/{username}/posts';
+};
+
+export type GetUsersByUsernamePostsErrors = {
+    /**
+     * User not found
+     */
+    404: TypesAppError;
+    /**
+     * Internal server error
+     */
+    500: TypesAppError;
+};
+
+export type GetUsersByUsernamePostsError = GetUsersByUsernamePostsErrors[keyof GetUsersByUsernamePostsErrors];
+
+export type GetUsersByUsernamePostsResponses = {
+    /**
+     * OK
+     */
+    200: PostsPostCursorPage;
+};
+
+export type GetUsersByUsernamePostsResponse = GetUsersByUsernamePostsResponses[keyof GetUsersByUsernamePostsResponses];

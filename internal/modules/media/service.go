@@ -133,4 +133,3 @@ func validateContentType(ct string) (string, error) {
 
 	return ext, nil
 }
-

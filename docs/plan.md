@@ -172,8 +172,9 @@ This document is the single source of truth for what to build, in what order, an
 - [ ] Post detail page
 - [ ] Frontend tests
 
-**Status:** `pending`
-**Owner:** —
+**Status:** `complete`
+**Owner:** Claude
+**Branch:** `feat/posts`
 
 ---
 

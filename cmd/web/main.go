@@ -24,6 +24,7 @@ import (
 	"github.com/radni/soapbox/internal/core/httpkit"
 	"github.com/radni/soapbox/internal/core/registry"
 	"github.com/radni/soapbox/internal/modules/media"
+	"github.com/radni/soapbox/internal/modules/posts"
 	"github.com/radni/soapbox/internal/modules/users"
 	"github.com/radni/soapbox/web"
 )
@@ -87,6 +88,8 @@ func main() {
 		AuthOptional: users.AuthOptional(tokens),
 	}
 
+	// --------------
+	// Register the modules for this host
 	if err := users.Load(ctx, deps); err != nil {
 		logger.Error("failed to load users module", "error", err)
 		os.Exit(1)
@@ -96,6 +99,13 @@ func main() {
 		logger.Error("failed to load media module", "error", err)
 		os.Exit(1)
 	}
+
+	if err := posts.Load(ctx, deps); err != nil {
+		logger.Error("failed to load posts module", "error", err)
+		os.Exit(1)
+	}
+
+	// --------------
 
 	// Serve embedded SPA — API routes match first, unmatched routes serve the frontend.
 	// In dev, run `make web-build` first or use Vite dev server at :5173 instead.

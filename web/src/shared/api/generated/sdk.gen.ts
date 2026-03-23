@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { DeleteUsersByUsernameFollowData, DeleteUsersByUsernameFollowErrors, DeleteUsersByUsernameFollowResponses, GetUsersByUsernameData, GetUsersByUsernameErrors, GetUsersByUsernameFollowersData, GetUsersByUsernameFollowersErrors, GetUsersByUsernameFollowersResponses, GetUsersByUsernameFollowingData, GetUsersByUsernameFollowingErrors, GetUsersByUsernameFollowingResponses, GetUsersByUsernameResponses, GetUsersSearchData, GetUsersSearchErrors, GetUsersSearchResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthLogoutData, PostAuthLogoutErrors, PostAuthLogoutResponses, PostAuthRefreshData, PostAuthRefreshErrors, PostAuthRefreshResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses, PostMediaByIdConfirmData, PostMediaByIdConfirmErrors, PostMediaByIdConfirmResponses, PostMediaUploadUrlData, PostMediaUploadUrlErrors, PostMediaUploadUrlResponses, PostUsersByUsernameFollowData, PostUsersByUsernameFollowErrors, PostUsersByUsernameFollowResponses, PutUsersMeData, PutUsersMeErrors, PutUsersMeResponses } from './types.gen';
+import type { DeletePostsByIdData, DeletePostsByIdErrors, DeletePostsByIdLikeData, DeletePostsByIdLikeErrors, DeletePostsByIdLikeResponses, DeletePostsByIdRepostData, DeletePostsByIdRepostErrors, DeletePostsByIdRepostResponses, DeletePostsByIdResponses, DeleteUsersByUsernameFollowData, DeleteUsersByUsernameFollowErrors, DeleteUsersByUsernameFollowResponses, GetPostsByIdData, GetPostsByIdErrors, GetPostsByIdRepliesData, GetPostsByIdRepliesErrors, GetPostsByIdRepliesResponses, GetPostsByIdResponses, GetPostsSearchData, GetPostsSearchErrors, GetPostsSearchResponses, GetUsersByUsernameData, GetUsersByUsernameErrors, GetUsersByUsernameFollowersData, GetUsersByUsernameFollowersErrors, GetUsersByUsernameFollowersResponses, GetUsersByUsernameFollowingData, GetUsersByUsernameFollowingErrors, GetUsersByUsernameFollowingResponses, GetUsersByUsernamePostsData, GetUsersByUsernamePostsErrors, GetUsersByUsernamePostsResponses, GetUsersByUsernameResponses, GetUsersSearchData, GetUsersSearchErrors, GetUsersSearchResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthLogoutData, PostAuthLogoutErrors, PostAuthLogoutResponses, PostAuthRefreshData, PostAuthRefreshErrors, PostAuthRefreshResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses, PostMediaByIdConfirmData, PostMediaByIdConfirmErrors, PostMediaByIdConfirmResponses, PostMediaUploadUrlData, PostMediaUploadUrlErrors, PostMediaUploadUrlResponses, PostPostsByIdLikeData, PostPostsByIdLikeErrors, PostPostsByIdLikeResponses, PostPostsByIdRepostData, PostPostsByIdRepostErrors, PostPostsByIdRepostResponses, PostPostsData, PostPostsErrors, PostPostsResponses, PostUsersByUsernameFollowData, PostUsersByUsernameFollowErrors, PostUsersByUsernameFollowResponses, PutUsersMeData, PutUsersMeErrors, PutUsersMeResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -95,6 +95,105 @@ export const postMediaByIdConfirm = <ThrowOnError extends boolean = false>(optio
 });
 
 /**
+ * Create a post
+ *
+ * Create a new post with text and optional image attachments. Supports replies (parent_id) and reposts (repost_of_id). Automatically extracts hashtags and fetches link previews.
+ */
+export const postPosts = <ThrowOnError extends boolean = false>(options: Options<PostPostsData, ThrowOnError>) => (options.client ?? client).post<PostPostsResponses, PostPostsErrors, ThrowOnError>({
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/posts',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Search posts
+ *
+ * Full-text search over post body content, cursor-paginated.
+ */
+export const getPostsSearch = <ThrowOnError extends boolean = false>(options: Options<GetPostsSearchData, ThrowOnError>) => (options.client ?? client).get<GetPostsSearchResponses, GetPostsSearchErrors, ThrowOnError>({ url: '/posts/search', ...options });
+
+/**
+ * Delete a post
+ *
+ * Delete a post. Only the post author can delete their own post.
+ */
+export const deletePostsById = <ThrowOnError extends boolean = false>(options: Options<DeletePostsByIdData, ThrowOnError>) => (options.client ?? client).delete<DeletePostsByIdResponses, DeletePostsByIdErrors, ThrowOnError>({
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/posts/{id}',
+    ...options
+});
+
+/**
+ * Get a post
+ *
+ * Retrieve a post by ID. If authenticated, includes whether the viewer has liked or reposted this post.
+ */
+export const getPostsById = <ThrowOnError extends boolean = false>(options: Options<GetPostsByIdData, ThrowOnError>) => (options.client ?? client).get<GetPostsByIdResponses, GetPostsByIdErrors, ThrowOnError>({
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/posts/{id}',
+    ...options
+});
+
+/**
+ * Unlike a post
+ *
+ * Remove a like from a post. Returns the updated like count.
+ */
+export const deletePostsByIdLike = <ThrowOnError extends boolean = false>(options: Options<DeletePostsByIdLikeData, ThrowOnError>) => (options.client ?? client).delete<DeletePostsByIdLikeResponses, DeletePostsByIdLikeErrors, ThrowOnError>({
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/posts/{id}/like',
+    ...options
+});
+
+/**
+ * Like a post
+ *
+ * Add a like to a post. Returns the updated like count.
+ */
+export const postPostsByIdLike = <ThrowOnError extends boolean = false>(options: Options<PostPostsByIdLikeData, ThrowOnError>) => (options.client ?? client).post<PostPostsByIdLikeResponses, PostPostsByIdLikeErrors, ThrowOnError>({
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/posts/{id}/like',
+    ...options
+});
+
+/**
+ * Get replies
+ *
+ * Retrieve replies to a post, cursor-paginated in chronological order.
+ */
+export const getPostsByIdReplies = <ThrowOnError extends boolean = false>(options: Options<GetPostsByIdRepliesData, ThrowOnError>) => (options.client ?? client).get<GetPostsByIdRepliesResponses, GetPostsByIdRepliesErrors, ThrowOnError>({
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/posts/{id}/replies',
+    ...options
+});
+
+/**
+ * Undo repost
+ *
+ * Remove a repost of a post. Returns the updated repost count.
+ */
+export const deletePostsByIdRepost = <ThrowOnError extends boolean = false>(options: Options<DeletePostsByIdRepostData, ThrowOnError>) => (options.client ?? client).delete<DeletePostsByIdRepostResponses, DeletePostsByIdRepostErrors, ThrowOnError>({
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/posts/{id}/repost',
+    ...options
+});
+
+/**
+ * Repost a post
+ *
+ * Repost an existing post. Returns the updated repost count.
+ */
+export const postPostsByIdRepost = <ThrowOnError extends boolean = false>(options: Options<PostPostsByIdRepostData, ThrowOnError>) => (options.client ?? client).post<PostPostsByIdRepostResponses, PostPostsByIdRepostErrors, ThrowOnError>({
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/posts/{id}/repost',
+    ...options
+});
+
+/**
  * Update own profile
  *
  * Update display name, bio, or avatar URL for the authenticated user.
@@ -162,3 +261,14 @@ export const getUsersByUsernameFollowers = <ThrowOnError extends boolean = false
  * Retrieve a cursor-paginated list of users that the given username follows.
  */
 export const getUsersByUsernameFollowing = <ThrowOnError extends boolean = false>(options: Options<GetUsersByUsernameFollowingData, ThrowOnError>) => (options.client ?? client).get<GetUsersByUsernameFollowingResponses, GetUsersByUsernameFollowingErrors, ThrowOnError>({ url: '/users/{username}/following', ...options });
+
+/**
+ * Get user posts
+ *
+ * Retrieve root posts by a user, cursor-paginated in reverse chronological order. If authenticated, includes liked/reposted status.
+ */
+export const getUsersByUsernamePosts = <ThrowOnError extends boolean = false>(options: Options<GetUsersByUsernamePostsData, ThrowOnError>) => (options.client ?? client).get<GetUsersByUsernamePostsResponses, GetUsersByUsernamePostsErrors, ThrowOnError>({
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/users/{username}/posts',
+    ...options
+});
