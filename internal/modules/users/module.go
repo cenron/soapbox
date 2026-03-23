@@ -21,7 +21,7 @@ func Load(ctx context.Context, deps core.ModuleDeps) error {
 		return err
 	}
 
-	handler.Routes(deps.Router, AuthRequired(tokens), AuthOptional(tokens))
+	handler.Routes(deps.Router, deps.AuthRequired, deps.AuthOptional)
 
 	return nil
 }

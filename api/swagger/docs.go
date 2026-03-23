@@ -188,6 +188,139 @@ const docTemplate = `{
                 }
             }
         },
+        "/media/upload-url": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a presigned S3 URL for direct file upload. The client uploads the file directly to S3 using this URL, then confirms the upload.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "media"
+                ],
+                "summary": "Request a presigned upload URL",
+                "parameters": [
+                    {
+                        "description": "Upload details",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/media.UploadURLRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/media.UploadURLResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/types.AppError"
+                        }
+                    },
+                    "422": {
+                        "description": "Unsupported content type",
+                        "schema": {
+                            "$ref": "#/definitions/types.AppError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/types.AppError"
+                        }
+                    }
+                }
+            }
+        },
+        "/media/{id}/confirm": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Marks a pending upload as ready. Call this after successfully uploading the file to the presigned URL.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "media"
+                ],
+                "summary": "Confirm an upload",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Upload ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Upload size",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/media.ConfirmUploadRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/media.UploadResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/types.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "Not the upload owner",
+                        "schema": {
+                            "$ref": "#/definitions/types.AppError"
+                        }
+                    },
+                    "404": {
+                        "description": "Upload not found",
+                        "schema": {
+                            "$ref": "#/definitions/types.AppError"
+                        }
+                    },
+                    "409": {
+                        "description": "Already confirmed",
+                        "schema": {
+                            "$ref": "#/definitions/types.AppError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/types.AppError"
+                        }
+                    }
+                }
+            }
+        },
         "/users/me": {
             "put": {
                 "security": [
@@ -548,6 +681,65 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "media.ConfirmUploadRequest": {
+            "type": "object",
+            "properties": {
+                "size": {
+                    "type": "integer"
+                }
+            }
+        },
+        "media.UploadResponse": {
+            "type": "object",
+            "properties": {
+                "content_type": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "file_key": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "media.UploadURLRequest": {
+            "type": "object",
+            "properties": {
+                "content_type": {
+                    "type": "string"
+                },
+                "filename": {
+                    "type": "string"
+                }
+            }
+        },
+        "media.UploadURLResponse": {
+            "type": "object",
+            "properties": {
+                "file_key": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "upload_url": {
+                    "type": "string"
+                }
+            }
+        },
         "types.AppError": {
             "type": "object",
             "properties": {

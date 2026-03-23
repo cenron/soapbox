@@ -4,6 +4,31 @@ export type ClientOptions = {
     baseUrl: 'http://localhost:8080/api/v1' | (string & {});
 };
 
+export type MediaConfirmUploadRequest = {
+    size?: number;
+};
+
+export type MediaUploadResponse = {
+    content_type?: string;
+    created_at?: string;
+    file_key?: string;
+    id?: string;
+    size?: number;
+    status?: string;
+    url?: string;
+};
+
+export type MediaUploadUrlRequest = {
+    content_type?: string;
+    filename?: string;
+};
+
+export type MediaUploadUrlResponse = {
+    file_key?: string;
+    id?: string;
+    upload_url?: string;
+};
+
 export type TypesAppError = {
     detail?: string;
     message?: string;
@@ -182,6 +207,91 @@ export type PostAuthRegisterResponses = {
 };
 
 export type PostAuthRegisterResponse = PostAuthRegisterResponses[keyof PostAuthRegisterResponses];
+
+export type PostMediaUploadUrlData = {
+    /**
+     * Upload details
+     */
+    body: MediaUploadUrlRequest;
+    path?: never;
+    query?: never;
+    url: '/media/upload-url';
+};
+
+export type PostMediaUploadUrlErrors = {
+    /**
+     * Unauthorized
+     */
+    401: TypesAppError;
+    /**
+     * Unsupported content type
+     */
+    422: TypesAppError;
+    /**
+     * Internal server error
+     */
+    500: TypesAppError;
+};
+
+export type PostMediaUploadUrlError = PostMediaUploadUrlErrors[keyof PostMediaUploadUrlErrors];
+
+export type PostMediaUploadUrlResponses = {
+    /**
+     * Created
+     */
+    201: MediaUploadUrlResponse;
+};
+
+export type PostMediaUploadUrlResponse = PostMediaUploadUrlResponses[keyof PostMediaUploadUrlResponses];
+
+export type PostMediaByIdConfirmData = {
+    /**
+     * Upload size
+     */
+    body: MediaConfirmUploadRequest;
+    path: {
+        /**
+         * Upload ID
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/media/{id}/confirm';
+};
+
+export type PostMediaByIdConfirmErrors = {
+    /**
+     * Unauthorized
+     */
+    401: TypesAppError;
+    /**
+     * Not the upload owner
+     */
+    403: TypesAppError;
+    /**
+     * Upload not found
+     */
+    404: TypesAppError;
+    /**
+     * Already confirmed
+     */
+    409: TypesAppError;
+    /**
+     * Internal server error
+     */
+    500: TypesAppError;
+};
+
+export type PostMediaByIdConfirmError = PostMediaByIdConfirmErrors[keyof PostMediaByIdConfirmErrors];
+
+export type PostMediaByIdConfirmResponses = {
+    /**
+     * OK
+     */
+    200: MediaUploadResponse;
+};
+
+export type PostMediaByIdConfirmResponse = PostMediaByIdConfirmResponses[keyof PostMediaByIdConfirmResponses];
 
 export type PutUsersMeData = {
     /**

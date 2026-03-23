@@ -3,8 +3,8 @@
 import { type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { deleteUsersByUsernameFollow, getUsersByUsername, getUsersByUsernameFollowers, getUsersByUsernameFollowing, getUsersSearch, type Options, postAuthLogin, postAuthLogout, postAuthRefresh, postAuthRegister, postUsersByUsernameFollow, putUsersMe } from '../sdk.gen';
-import type { DeleteUsersByUsernameFollowData, DeleteUsersByUsernameFollowError, GetUsersByUsernameData, GetUsersByUsernameError, GetUsersByUsernameFollowersData, GetUsersByUsernameFollowersError, GetUsersByUsernameFollowersResponse, GetUsersByUsernameFollowingData, GetUsersByUsernameFollowingError, GetUsersByUsernameFollowingResponse, GetUsersByUsernameResponse, GetUsersSearchData, GetUsersSearchError, GetUsersSearchResponse, PostAuthLoginData, PostAuthLoginError, PostAuthLoginResponse, PostAuthLogoutData, PostAuthLogoutError, PostAuthRefreshData, PostAuthRefreshError, PostAuthRefreshResponse, PostAuthRegisterData, PostAuthRegisterError, PostAuthRegisterResponse, PostUsersByUsernameFollowData, PostUsersByUsernameFollowError, PutUsersMeData, PutUsersMeError, PutUsersMeResponse } from '../types.gen';
+import { deleteUsersByUsernameFollow, getUsersByUsername, getUsersByUsernameFollowers, getUsersByUsernameFollowing, getUsersSearch, type Options, postAuthLogin, postAuthLogout, postAuthRefresh, postAuthRegister, postMediaByIdConfirm, postMediaUploadUrl, postUsersByUsernameFollow, putUsersMe } from '../sdk.gen';
+import type { DeleteUsersByUsernameFollowData, DeleteUsersByUsernameFollowError, GetUsersByUsernameData, GetUsersByUsernameError, GetUsersByUsernameFollowersData, GetUsersByUsernameFollowersError, GetUsersByUsernameFollowersResponse, GetUsersByUsernameFollowingData, GetUsersByUsernameFollowingError, GetUsersByUsernameFollowingResponse, GetUsersByUsernameResponse, GetUsersSearchData, GetUsersSearchError, GetUsersSearchResponse, PostAuthLoginData, PostAuthLoginError, PostAuthLoginResponse, PostAuthLogoutData, PostAuthLogoutError, PostAuthRefreshData, PostAuthRefreshError, PostAuthRefreshResponse, PostAuthRegisterData, PostAuthRegisterError, PostAuthRegisterResponse, PostMediaByIdConfirmData, PostMediaByIdConfirmError, PostMediaByIdConfirmResponse, PostMediaUploadUrlData, PostMediaUploadUrlError, PostMediaUploadUrlResponse, PostUsersByUsernameFollowData, PostUsersByUsernameFollowError, PutUsersMeData, PutUsersMeError, PutUsersMeResponse } from '../types.gen';
 
 /**
  * Log in
@@ -72,6 +72,44 @@ export const postAuthRegisterMutation = (options?: Partial<Options<PostAuthRegis
     const mutationOptions: UseMutationOptions<PostAuthRegisterResponse, PostAuthRegisterError, Options<PostAuthRegisterData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await postAuthRegister({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Request a presigned upload URL
+ *
+ * Returns a presigned S3 URL for direct file upload. The client uploads the file directly to S3 using this URL, then confirms the upload.
+ */
+export const postMediaUploadUrlMutation = (options?: Partial<Options<PostMediaUploadUrlData>>): UseMutationOptions<PostMediaUploadUrlResponse, PostMediaUploadUrlError, Options<PostMediaUploadUrlData>> => {
+    const mutationOptions: UseMutationOptions<PostMediaUploadUrlResponse, PostMediaUploadUrlError, Options<PostMediaUploadUrlData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await postMediaUploadUrl({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Confirm an upload
+ *
+ * Marks a pending upload as ready. Call this after successfully uploading the file to the presigned URL.
+ */
+export const postMediaByIdConfirmMutation = (options?: Partial<Options<PostMediaByIdConfirmData>>): UseMutationOptions<PostMediaByIdConfirmResponse, PostMediaByIdConfirmError, Options<PostMediaByIdConfirmData>> => {
+    const mutationOptions: UseMutationOptions<PostMediaByIdConfirmResponse, PostMediaByIdConfirmError, Options<PostMediaByIdConfirmData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await postMediaByIdConfirm({
                 ...options,
                 ...fnOptions,
                 throwOnError: true

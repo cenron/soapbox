@@ -2,6 +2,7 @@ package core
 
 import (
 	"log/slog"
+	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/radni/soapbox/internal/core/bus"
@@ -19,4 +20,7 @@ type ModuleDeps struct {
 	Router   chi.Router
 	Logger   *slog.Logger
 	Config   *config.Config
+
+	AuthRequired func(http.Handler) http.Handler
+	AuthOptional func(http.Handler) http.Handler
 }

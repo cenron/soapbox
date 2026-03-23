@@ -139,8 +139,9 @@ This document is the single source of truth for what to build, in what order, an
 - [ ] Image display component (responsive, lazy loading)
 - [ ] Frontend tests
 
-**Status:** `pending`
-**Owner:** —
+**Status:** `complete`
+**Owner:** Claude
+**Branch:** `feat/media`
 
 ### Module: posts
 > Branch: `feat/posts`
