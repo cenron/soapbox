@@ -146,6 +146,18 @@
 **What happened:** Profile page Posts tab showed "Posts will appear here." placeholder because the `GET /users/{username}/posts` endpoint didn't exist. The MCP walkthrough tested compose, like, reply, hashtag, delete — but never clicked the Profile link to check the Posts tab. The gap shipped unnoticed.
 **Takeaway:** MCP validation is QA, not a demo. Before marking complete: (1) visit every page reachable from the nav, (2) click every tab, (3) verify data loads in each one, (4) test as a second user too. Use a checklist, not intuition. If a feature creates data, verify it shows up everywhere it should (profile, detail page, search).
 
+## [2026-03-22] Go bus type assertions fail across module boundaries — use bus.Convert
+**What happened:** The in-memory bus passes values as `any`. Modules defined local mirror structs for cross-module types, but Go's nominal typing means `posts.userGetProfileQuery` != `users.GetProfileQuery`. Direct type assertions (`req.(GetProfileQuery)`) always returned `false`, causing "invalid request type" errors at runtime. This was a latent bug in all cross-module bus queries.
+**Takeaway:** Always use `bus.Convert[T](payload)` (JSON roundtrip) instead of direct type assertion for bus query request/response handling. This converts structurally-identical types across package boundaries. Added `internal/core/bus/convert.go` for this.
+
+## [2026-03-22] Bus event fan-out is async — E2E tests must wait before checking results
+**What happened:** Feed timeline E2E tests created a post and immediately checked the timeline, but the bus event handler (which inserts into `feed.timelines`) runs in a goroutine. The timeline was still empty when the test checked.
+**Takeaway:** After actions that trigger bus events (post creation, follow), add `page.waitForTimeout(1000)` before asserting the result. Also re-navigate to force a fresh query instead of relying on TanStack Query cache invalidation racing with async fan-out.
+
+## [2026-03-22] React 19 lint rules prohibit setState in effects and ref access during render
+**What happened:** `WsProvider` needed to create a WebSocket client in an effect and pass it to children. Using `setState` in the effect body triggers `react-hooks/set-state-in-effect`. Using `useRef` + accessing `ref.current` during render triggers `react-hooks/refs`.
+**Takeaway:** Use `useSyncExternalStore` with a module-level store when you need to manage a value that's created in an effect and consumed during render. The store pattern (module-level variable + listeners set) satisfies both lint rules.
+
 ## [2026-03-22] PostActions buttons need title attributes for accessibility and test selectors
 **What happened:** E2E tests couldn't find like/repost/delete buttons with `getByRole('button', { name: 'Like' })` because buttons only contained SVG icons with no text content. `aria-label` or `title` was missing.
 **Takeaway:** Always add `title` attributes to icon-only buttons. This provides accessibility (tooltip on hover, screen reader label) and a stable test selector via `page.getByTitle("Like")`. Don't rely on `getByRole('button', { name })` for icon-only buttons — there's no accessible name without explicit labeling.

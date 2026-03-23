@@ -4,6 +4,47 @@ export type ClientOptions = {
     baseUrl: 'http://localhost:8080/api/v1' | (string & {});
 };
 
+export type FeedTimelineCursorPage = {
+    has_more?: boolean;
+    items?: Array<FeedPostResponse>;
+    next_cursor?: string;
+};
+
+export type FeedPostLinkPreview = {
+    description?: string;
+    image_url?: string;
+    title?: string;
+    url?: string;
+};
+
+export type FeedPostMediaResponse = {
+    id?: string;
+    media_type?: string;
+    media_url?: string;
+    position?: number;
+};
+
+export type FeedPostResponse = {
+    author_avatar_url?: string;
+    author_display_name?: string;
+    author_id?: string;
+    author_username?: string;
+    author_verified?: boolean;
+    body?: string;
+    created_at?: string;
+    hashtags?: Array<string>;
+    id?: string;
+    like_count?: number;
+    liked_by_me?: boolean;
+    link_preview?: FeedPostLinkPreview;
+    media?: Array<FeedPostMediaResponse>;
+    parent_id?: string;
+    reply_count?: number;
+    repost_count?: number;
+    repost_of_id?: string;
+    reposted_by_me?: boolean;
+};
+
 export type MediaConfirmUploadRequest = {
     size?: number;
 };
@@ -267,6 +308,44 @@ export type PostAuthRegisterResponses = {
 };
 
 export type PostAuthRegisterResponse = PostAuthRegisterResponses[keyof PostAuthRegisterResponses];
+
+export type GetFeedData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Pagination cursor
+         */
+        cursor?: string;
+        /**
+         * Page size (default 20, max 100)
+         */
+        limit?: number;
+    };
+    url: '/feed';
+};
+
+export type GetFeedErrors = {
+    /**
+     * Not authenticated
+     */
+    401: TypesAppError;
+    /**
+     * Internal server error
+     */
+    500: TypesAppError;
+};
+
+export type GetFeedError = GetFeedErrors[keyof GetFeedErrors];
+
+export type GetFeedResponses = {
+    /**
+     * OK
+     */
+    200: FeedTimelineCursorPage;
+};
+
+export type GetFeedResponse = GetFeedResponses[keyof GetFeedResponses];
 
 export type PostMediaUploadUrlData = {
     /**

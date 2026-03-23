@@ -10,6 +10,7 @@ import (
 	"github.com/radni/soapbox/internal/core/config"
 	"github.com/radni/soapbox/internal/core/db"
 	"github.com/radni/soapbox/internal/core/registry"
+	"github.com/radni/soapbox/internal/core/ws"
 )
 
 type ModuleDeps struct {
@@ -20,6 +21,7 @@ type ModuleDeps struct {
 	Router   chi.Router
 	Logger   *slog.Logger
 	Config   *config.Config
+	WSHub    *ws.Hub
 
 	AuthRequired func(http.Handler) http.Handler
 	AuthOptional func(http.Handler) http.Handler

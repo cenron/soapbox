@@ -34,9 +34,9 @@ func RegisterQueries(b bus.Bus, service *Service) error {
 
 func handleGetByIDs(service *Service) func(req any) (any, error) {
 	return func(req any) (any, error) {
-		q, ok := req.(GetByIDsQuery)
-		if !ok {
-			return nil, fmt.Errorf("posts: GetByIDs: invalid request type")
+		q, err := bus.Convert[GetByIDsQuery](req)
+		if err != nil {
+			return nil, fmt.Errorf("posts: GetByIDs: invalid request type: %w", err)
 		}
 
 		ctx := context.Background()
@@ -55,9 +55,9 @@ func handleGetByIDs(service *Service) func(req any) (any, error) {
 
 func handleGetByAuthor(service *Service) func(req any) (any, error) {
 	return func(req any) (any, error) {
-		q, ok := req.(GetByAuthorQuery)
-		if !ok {
-			return nil, fmt.Errorf("posts: GetByAuthor: invalid request type")
+		q, err := bus.Convert[GetByAuthorQuery](req)
+		if err != nil {
+			return nil, fmt.Errorf("posts: GetByAuthor: invalid request type: %w", err)
 		}
 
 		ctx := context.Background()
@@ -76,9 +76,9 @@ func handleGetByAuthor(service *Service) func(req any) (any, error) {
 
 func handleGetThread(service *Service) func(req any) (any, error) {
 	return func(req any) (any, error) {
-		q, ok := req.(GetThreadQuery)
-		if !ok {
-			return nil, fmt.Errorf("posts: GetThread: invalid request type")
+		q, err := bus.Convert[GetThreadQuery](req)
+		if err != nil {
+			return nil, fmt.Errorf("posts: GetThread: invalid request type: %w", err)
 		}
 
 		ctx := context.Background()
@@ -94,9 +94,9 @@ func handleGetThread(service *Service) func(req any) (any, error) {
 
 func handleSearch(service *Service) func(req any) (any, error) {
 	return func(req any) (any, error) {
-		q, ok := req.(SearchPostsQuery)
-		if !ok {
-			return nil, fmt.Errorf("posts: Search: invalid request type")
+		q, err := bus.Convert[SearchPostsQuery](req)
+		if err != nil {
+			return nil, fmt.Errorf("posts: Search: invalid request type: %w", err)
 		}
 
 		ctx := context.Background()
@@ -115,9 +115,9 @@ func handleSearch(service *Service) func(req any) (any, error) {
 
 func handleSearchHashtag(service *Service) func(req any) (any, error) {
 	return func(req any) (any, error) {
-		q, ok := req.(SearchHashtagQuery)
-		if !ok {
-			return nil, fmt.Errorf("posts: SearchHashtag: invalid request type")
+		q, err := bus.Convert[SearchHashtagQuery](req)
+		if err != nil {
+			return nil, fmt.Errorf("posts: SearchHashtag: invalid request type: %w", err)
 		}
 
 		ctx := context.Background()

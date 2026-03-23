@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { DeletePostsByIdData, DeletePostsByIdErrors, DeletePostsByIdLikeData, DeletePostsByIdLikeErrors, DeletePostsByIdLikeResponses, DeletePostsByIdRepostData, DeletePostsByIdRepostErrors, DeletePostsByIdRepostResponses, DeletePostsByIdResponses, DeleteUsersByUsernameFollowData, DeleteUsersByUsernameFollowErrors, DeleteUsersByUsernameFollowResponses, GetPostsByIdData, GetPostsByIdErrors, GetPostsByIdRepliesData, GetPostsByIdRepliesErrors, GetPostsByIdRepliesResponses, GetPostsByIdResponses, GetPostsSearchData, GetPostsSearchErrors, GetPostsSearchResponses, GetUsersByUsernameData, GetUsersByUsernameErrors, GetUsersByUsernameFollowersData, GetUsersByUsernameFollowersErrors, GetUsersByUsernameFollowersResponses, GetUsersByUsernameFollowingData, GetUsersByUsernameFollowingErrors, GetUsersByUsernameFollowingResponses, GetUsersByUsernamePostsData, GetUsersByUsernamePostsErrors, GetUsersByUsernamePostsResponses, GetUsersByUsernameResponses, GetUsersSearchData, GetUsersSearchErrors, GetUsersSearchResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthLogoutData, PostAuthLogoutErrors, PostAuthLogoutResponses, PostAuthRefreshData, PostAuthRefreshErrors, PostAuthRefreshResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses, PostMediaByIdConfirmData, PostMediaByIdConfirmErrors, PostMediaByIdConfirmResponses, PostMediaUploadUrlData, PostMediaUploadUrlErrors, PostMediaUploadUrlResponses, PostPostsByIdLikeData, PostPostsByIdLikeErrors, PostPostsByIdLikeResponses, PostPostsByIdRepostData, PostPostsByIdRepostErrors, PostPostsByIdRepostResponses, PostPostsData, PostPostsErrors, PostPostsResponses, PostUsersByUsernameFollowData, PostUsersByUsernameFollowErrors, PostUsersByUsernameFollowResponses, PutUsersMeData, PutUsersMeErrors, PutUsersMeResponses } from './types.gen';
+import type { DeletePostsByIdData, DeletePostsByIdErrors, DeletePostsByIdLikeData, DeletePostsByIdLikeErrors, DeletePostsByIdLikeResponses, DeletePostsByIdRepostData, DeletePostsByIdRepostErrors, DeletePostsByIdRepostResponses, DeletePostsByIdResponses, DeleteUsersByUsernameFollowData, DeleteUsersByUsernameFollowErrors, DeleteUsersByUsernameFollowResponses, GetFeedData, GetFeedErrors, GetFeedResponses, GetPostsByIdData, GetPostsByIdErrors, GetPostsByIdRepliesData, GetPostsByIdRepliesErrors, GetPostsByIdRepliesResponses, GetPostsByIdResponses, GetPostsSearchData, GetPostsSearchErrors, GetPostsSearchResponses, GetUsersByUsernameData, GetUsersByUsernameErrors, GetUsersByUsernameFollowersData, GetUsersByUsernameFollowersErrors, GetUsersByUsernameFollowersResponses, GetUsersByUsernameFollowingData, GetUsersByUsernameFollowingErrors, GetUsersByUsernameFollowingResponses, GetUsersByUsernamePostsData, GetUsersByUsernamePostsErrors, GetUsersByUsernamePostsResponses, GetUsersByUsernameResponses, GetUsersSearchData, GetUsersSearchErrors, GetUsersSearchResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthLogoutData, PostAuthLogoutErrors, PostAuthLogoutResponses, PostAuthRefreshData, PostAuthRefreshErrors, PostAuthRefreshResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses, PostMediaByIdConfirmData, PostMediaByIdConfirmErrors, PostMediaByIdConfirmResponses, PostMediaUploadUrlData, PostMediaUploadUrlErrors, PostMediaUploadUrlResponses, PostPostsByIdLikeData, PostPostsByIdLikeErrors, PostPostsByIdLikeResponses, PostPostsByIdRepostData, PostPostsByIdRepostErrors, PostPostsByIdRepostResponses, PostPostsData, PostPostsErrors, PostPostsResponses, PostUsersByUsernameFollowData, PostUsersByUsernameFollowErrors, PostUsersByUsernameFollowResponses, PutUsersMeData, PutUsersMeErrors, PutUsersMeResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -62,6 +62,17 @@ export const postAuthRegister = <ThrowOnError extends boolean = false>(options: 
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ * Get timeline
+ *
+ * Returns the authenticated user's chronological home timeline. Shows posts from followed users and the user's own posts.
+ */
+export const getFeed = <ThrowOnError extends boolean = false>(options?: Options<GetFeedData, ThrowOnError>) => (options?.client ?? client).get<GetFeedResponses, GetFeedErrors, ThrowOnError>({
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/feed',
+    ...options
 });
 
 /**

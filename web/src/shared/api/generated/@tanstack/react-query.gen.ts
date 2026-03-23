@@ -3,8 +3,8 @@
 import { type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { deletePostsById, deletePostsByIdLike, deletePostsByIdRepost, deleteUsersByUsernameFollow, getPostsById, getPostsByIdReplies, getPostsSearch, getUsersByUsername, getUsersByUsernameFollowers, getUsersByUsernameFollowing, getUsersByUsernamePosts, getUsersSearch, type Options, postAuthLogin, postAuthLogout, postAuthRefresh, postAuthRegister, postMediaByIdConfirm, postMediaUploadUrl, postPosts, postPostsByIdLike, postPostsByIdRepost, postUsersByUsernameFollow, putUsersMe } from '../sdk.gen';
-import type { DeletePostsByIdData, DeletePostsByIdError, DeletePostsByIdLikeData, DeletePostsByIdLikeError, DeletePostsByIdLikeResponse, DeletePostsByIdRepostData, DeletePostsByIdRepostError, DeletePostsByIdRepostResponse, DeleteUsersByUsernameFollowData, DeleteUsersByUsernameFollowError, GetPostsByIdData, GetPostsByIdError, GetPostsByIdRepliesData, GetPostsByIdRepliesError, GetPostsByIdRepliesResponse, GetPostsByIdResponse, GetPostsSearchData, GetPostsSearchError, GetPostsSearchResponse, GetUsersByUsernameData, GetUsersByUsernameError, GetUsersByUsernameFollowersData, GetUsersByUsernameFollowersError, GetUsersByUsernameFollowersResponse, GetUsersByUsernameFollowingData, GetUsersByUsernameFollowingError, GetUsersByUsernameFollowingResponse, GetUsersByUsernamePostsData, GetUsersByUsernamePostsError, GetUsersByUsernamePostsResponse, GetUsersByUsernameResponse, GetUsersSearchData, GetUsersSearchError, GetUsersSearchResponse, PostAuthLoginData, PostAuthLoginError, PostAuthLoginResponse, PostAuthLogoutData, PostAuthLogoutError, PostAuthRefreshData, PostAuthRefreshError, PostAuthRefreshResponse, PostAuthRegisterData, PostAuthRegisterError, PostAuthRegisterResponse, PostMediaByIdConfirmData, PostMediaByIdConfirmError, PostMediaByIdConfirmResponse, PostMediaUploadUrlData, PostMediaUploadUrlError, PostMediaUploadUrlResponse, PostPostsByIdLikeData, PostPostsByIdLikeError, PostPostsByIdLikeResponse, PostPostsByIdRepostData, PostPostsByIdRepostError, PostPostsByIdRepostResponse, PostPostsData, PostPostsError, PostPostsResponse, PostUsersByUsernameFollowData, PostUsersByUsernameFollowError, PutUsersMeData, PutUsersMeError, PutUsersMeResponse } from '../types.gen';
+import { deletePostsById, deletePostsByIdLike, deletePostsByIdRepost, deleteUsersByUsernameFollow, getFeed, getPostsById, getPostsByIdReplies, getPostsSearch, getUsersByUsername, getUsersByUsernameFollowers, getUsersByUsernameFollowing, getUsersByUsernamePosts, getUsersSearch, type Options, postAuthLogin, postAuthLogout, postAuthRefresh, postAuthRegister, postMediaByIdConfirm, postMediaUploadUrl, postPosts, postPostsByIdLike, postPostsByIdRepost, postUsersByUsernameFollow, putUsersMe } from '../sdk.gen';
+import type { DeletePostsByIdData, DeletePostsByIdError, DeletePostsByIdLikeData, DeletePostsByIdLikeError, DeletePostsByIdLikeResponse, DeletePostsByIdRepostData, DeletePostsByIdRepostError, DeletePostsByIdRepostResponse, DeleteUsersByUsernameFollowData, DeleteUsersByUsernameFollowError, GetFeedData, GetFeedError, GetFeedResponse, GetPostsByIdData, GetPostsByIdError, GetPostsByIdRepliesData, GetPostsByIdRepliesError, GetPostsByIdRepliesResponse, GetPostsByIdResponse, GetPostsSearchData, GetPostsSearchError, GetPostsSearchResponse, GetUsersByUsernameData, GetUsersByUsernameError, GetUsersByUsernameFollowersData, GetUsersByUsernameFollowersError, GetUsersByUsernameFollowersResponse, GetUsersByUsernameFollowingData, GetUsersByUsernameFollowingError, GetUsersByUsernameFollowingResponse, GetUsersByUsernamePostsData, GetUsersByUsernamePostsError, GetUsersByUsernamePostsResponse, GetUsersByUsernameResponse, GetUsersSearchData, GetUsersSearchError, GetUsersSearchResponse, PostAuthLoginData, PostAuthLoginError, PostAuthLoginResponse, PostAuthLogoutData, PostAuthLogoutError, PostAuthRefreshData, PostAuthRefreshError, PostAuthRefreshResponse, PostAuthRegisterData, PostAuthRegisterError, PostAuthRegisterResponse, PostMediaByIdConfirmData, PostMediaByIdConfirmError, PostMediaByIdConfirmResponse, PostMediaUploadUrlData, PostMediaUploadUrlError, PostMediaUploadUrlResponse, PostPostsByIdLikeData, PostPostsByIdLikeError, PostPostsByIdLikeResponse, PostPostsByIdRepostData, PostPostsByIdRepostError, PostPostsByIdRepostResponse, PostPostsData, PostPostsError, PostPostsResponse, PostUsersByUsernameFollowData, PostUsersByUsernameFollowError, PutUsersMeData, PutUsersMeError, PutUsersMeResponse } from '../types.gen';
 
 /**
  * Log in
@@ -82,6 +82,117 @@ export const postAuthRegisterMutation = (options?: Partial<Options<PostAuthRegis
     return mutationOptions;
 };
 
+export type QueryKey<TOptions extends Options> = [
+    Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
+        _id: string;
+        _infinite?: boolean;
+        tags?: ReadonlyArray<string>;
+    }
+];
+
+const createQueryKey = <TOptions extends Options>(id: string, options?: TOptions, infinite?: boolean, tags?: ReadonlyArray<string>): [
+    QueryKey<TOptions>[0]
+] => {
+    const params: QueryKey<TOptions>[0] = { _id: id, baseUrl: options?.baseUrl || (options?.client ?? client).getConfig().baseUrl } as QueryKey<TOptions>[0];
+    if (infinite) {
+        params._infinite = infinite;
+    }
+    if (tags) {
+        params.tags = tags;
+    }
+    if (options?.body) {
+        params.body = options.body;
+    }
+    if (options?.headers) {
+        params.headers = options.headers;
+    }
+    if (options?.path) {
+        params.path = options.path;
+    }
+    if (options?.query) {
+        params.query = options.query;
+    }
+    return [params];
+};
+
+export const getFeedQueryKey = (options?: Options<GetFeedData>) => createQueryKey('getFeed', options);
+
+/**
+ * Get timeline
+ *
+ * Returns the authenticated user's chronological home timeline. Shows posts from followed users and the user's own posts.
+ */
+export const getFeedOptions = (options?: Options<GetFeedData>) => queryOptions<GetFeedResponse, GetFeedError, GetFeedResponse, ReturnType<typeof getFeedQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getFeed({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getFeedQueryKey(options)
+});
+
+const createInfiniteParams = <K extends Pick<QueryKey<Options>[0], 'body' | 'headers' | 'path' | 'query'>>(queryKey: QueryKey<Options>, page: K) => {
+    const params = { ...queryKey[0] };
+    if (page.body) {
+        params.body = {
+            ...queryKey[0].body as any,
+            ...page.body as any
+        };
+    }
+    if (page.headers) {
+        params.headers = {
+            ...queryKey[0].headers,
+            ...page.headers
+        };
+    }
+    if (page.path) {
+        params.path = {
+            ...queryKey[0].path as any,
+            ...page.path as any
+        };
+    }
+    if (page.query) {
+        params.query = {
+            ...queryKey[0].query as any,
+            ...page.query as any
+        };
+    }
+    return params as unknown as typeof page;
+};
+
+export const getFeedInfiniteQueryKey = (options?: Options<GetFeedData>): QueryKey<Options<GetFeedData>> => createQueryKey('getFeed', options, true);
+
+/**
+ * Get timeline
+ *
+ * Returns the authenticated user's chronological home timeline. Shows posts from followed users and the user's own posts.
+ */
+export const getFeedInfiniteOptions = (options?: Options<GetFeedData>) => infiniteQueryOptions<GetFeedResponse, GetFeedError, InfiniteData<GetFeedResponse>, QueryKey<Options<GetFeedData>>, string | Pick<QueryKey<Options<GetFeedData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+// @ts-ignore
+{
+    queryFn: async ({ pageParam, queryKey, signal }) => {
+        // @ts-ignore
+        const page: Pick<QueryKey<Options<GetFeedData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+            query: {
+                cursor: pageParam
+            }
+        };
+        const params = createInfiniteParams(queryKey, page);
+        const { data } = await getFeed({
+            ...options,
+            ...params,
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getFeedInfiniteQueryKey(options)
+});
+
 /**
  * Request a presigned upload URL
  *
@@ -139,39 +250,6 @@ export const postPostsMutation = (options?: Partial<Options<PostPostsData>>): Us
     return mutationOptions;
 };
 
-export type QueryKey<TOptions extends Options> = [
-    Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
-        _id: string;
-        _infinite?: boolean;
-        tags?: ReadonlyArray<string>;
-    }
-];
-
-const createQueryKey = <TOptions extends Options>(id: string, options?: TOptions, infinite?: boolean, tags?: ReadonlyArray<string>): [
-    QueryKey<TOptions>[0]
-] => {
-    const params: QueryKey<TOptions>[0] = { _id: id, baseUrl: options?.baseUrl || (options?.client ?? client).getConfig().baseUrl } as QueryKey<TOptions>[0];
-    if (infinite) {
-        params._infinite = infinite;
-    }
-    if (tags) {
-        params.tags = tags;
-    }
-    if (options?.body) {
-        params.body = options.body;
-    }
-    if (options?.headers) {
-        params.headers = options.headers;
-    }
-    if (options?.path) {
-        params.path = options.path;
-    }
-    if (options?.query) {
-        params.query = options.query;
-    }
-    return [params];
-};
-
 export const getPostsSearchQueryKey = (options: Options<GetPostsSearchData>) => createQueryKey('getPostsSearch', options);
 
 /**
@@ -191,35 +269,6 @@ export const getPostsSearchOptions = (options: Options<GetPostsSearchData>) => q
     },
     queryKey: getPostsSearchQueryKey(options)
 });
-
-const createInfiniteParams = <K extends Pick<QueryKey<Options>[0], 'body' | 'headers' | 'path' | 'query'>>(queryKey: QueryKey<Options>, page: K) => {
-    const params = { ...queryKey[0] };
-    if (page.body) {
-        params.body = {
-            ...queryKey[0].body as any,
-            ...page.body as any
-        };
-    }
-    if (page.headers) {
-        params.headers = {
-            ...queryKey[0].headers,
-            ...page.headers
-        };
-    }
-    if (page.path) {
-        params.path = {
-            ...queryKey[0].path as any,
-            ...page.path as any
-        };
-    }
-    if (page.query) {
-        params.query = {
-            ...queryKey[0].query as any,
-            ...page.query as any
-        };
-    }
-    return params as unknown as typeof page;
-};
 
 export const getPostsSearchInfiniteQueryKey = (options: Options<GetPostsSearchData>): QueryKey<Options<GetPostsSearchData>> => createQueryKey('getPostsSearch', options, true);
 

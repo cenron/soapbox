@@ -21,14 +21,18 @@ func RegisterQueries(b bus.Bus, store *Store) error {
 		return fmt.Errorf("users: register query %s: %w", QueryGetFollowing, err)
 	}
 
+	if err := b.RegisterQuery(QueryGetFollowerIDs, handleGetFollowerIDs(store)); err != nil {
+		return fmt.Errorf("users: register query %s: %w", QueryGetFollowerIDs, err)
+	}
+
 	return nil
 }
 
 func handleGetProfile(store *Store) func(req any) (any, error) {
 	return func(req any) (any, error) {
-		q, ok := req.(GetProfileQuery)
-		if !ok {
-			return nil, fmt.Errorf("users: GetProfile: invalid request type")
+		q, err := bus.Convert[GetProfileQuery](req)
+		if err != nil {
+			return nil, fmt.Errorf("users: GetProfile: invalid request type: %w", err)
 		}
 
 		ctx := context.Background()
@@ -62,9 +66,9 @@ func handleGetProfile(store *Store) func(req any) (any, error) {
 
 func handleGetProfiles(store *Store) func(req any) (any, error) {
 	return func(req any) (any, error) {
-		q, ok := req.(GetProfilesQuery)
-		if !ok {
-			return nil, fmt.Errorf("users: GetProfiles: invalid request type")
+		q, err := bus.Convert[GetProfilesQuery](req)
+		if err != nil {
+			return nil, fmt.Errorf("users: GetProfiles: invalid request type: %w", err)
 		}
 
 		ctx := context.Background()
@@ -85,14 +89,32 @@ func handleGetProfiles(store *Store) func(req any) (any, error) {
 
 func handleGetFollowing(store *Store) func(req any) (any, error) {
 	return func(req any) (any, error) {
-		q, ok := req.(GetFollowingQuery)
-		if !ok {
-			return nil, fmt.Errorf("users: GetFollowing: invalid request type")
+		q, err := bus.Convert[GetFollowingQuery](req)
+		if err != nil {
+			return nil, fmt.Errorf("users: GetFollowing: invalid request type: %w", err)
 		}
 
 		ctx := context.Background()
 
 		ids, err := store.GetFollowingIDs(ctx, q.UserID)
+		if err != nil {
+			return nil, err
+		}
+
+		return ids, nil
+	}
+}
+
+func handleGetFollowerIDs(store *Store) func(req any) (any, error) {
+	return func(req any) (any, error) {
+		q, err := bus.Convert[GetFollowerIDsQuery](req)
+		if err != nil {
+			return nil, fmt.Errorf("users: GetFollowerIDs: invalid request type: %w", err)
+		}
+
+		ctx := context.Background()
+
+		ids, err := store.GetFollowerIDs(ctx, q.UserID)
 		if err != nil {
 			return nil, err
 		}

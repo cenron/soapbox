@@ -188,6 +188,57 @@ const docTemplate = `{
                 }
             }
         },
+        "/feed": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns the authenticated user's chronological home timeline. Shows posts from followed users and the user's own posts.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "feed"
+                ],
+                "summary": "Get timeline",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pagination cursor",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size (default 20, max 100)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/feed.TimelineCursorPage"
+                        }
+                    },
+                    "401": {
+                        "description": "Not authenticated",
+                        "schema": {
+                            "$ref": "#/definitions/types.AppError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/types.AppError"
+                        }
+                    }
+                }
+            }
+        },
         "/media/upload-url": {
             "post": {
                 "security": [
@@ -1225,6 +1276,122 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "feed.TimelineCursorPage": {
+            "type": "object",
+            "properties": {
+                "has_more": {
+                    "type": "boolean"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/feed.postResponse"
+                    }
+                },
+                "next_cursor": {
+                    "type": "string"
+                }
+            }
+        },
+        "feed.postLinkPreview": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "feed.postMediaResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "media_type": {
+                    "type": "string"
+                },
+                "media_url": {
+                    "type": "string"
+                },
+                "position": {
+                    "type": "integer"
+                }
+            }
+        },
+        "feed.postResponse": {
+            "type": "object",
+            "properties": {
+                "author_avatar_url": {
+                    "type": "string"
+                },
+                "author_display_name": {
+                    "type": "string"
+                },
+                "author_id": {
+                    "type": "string"
+                },
+                "author_username": {
+                    "type": "string"
+                },
+                "author_verified": {
+                    "type": "boolean"
+                },
+                "body": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "hashtags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "like_count": {
+                    "type": "integer"
+                },
+                "liked_by_me": {
+                    "type": "boolean"
+                },
+                "link_preview": {
+                    "$ref": "#/definitions/feed.postLinkPreview"
+                },
+                "media": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/feed.postMediaResponse"
+                    }
+                },
+                "parent_id": {
+                    "type": "string"
+                },
+                "reply_count": {
+                    "type": "integer"
+                },
+                "repost_count": {
+                    "type": "integer"
+                },
+                "repost_of_id": {
+                    "type": "string"
+                },
+                "reposted_by_me": {
+                    "type": "boolean"
+                }
+            }
+        },
         "media.ConfirmUploadRequest": {
             "type": "object",
             "properties": {

@@ -203,8 +203,9 @@ This document is the single source of truth for what to build, in what order, an
 - [ ] WebSocket integration for real-time new post indicator
 - [ ] Frontend tests
 
-**Status:** `pending`
-**Owner:** —
+**Status:** `complete`
+**Owner:** Claude
+**Branch:** `feat/feed`
 
 ### Module: notifications
 > Branch: `feat/notifications`
