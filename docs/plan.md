@@ -232,8 +232,9 @@ This document is the single source of truth for what to build, in what order, an
 - [ ] Mark as read interactions
 - [ ] Frontend tests
 
-**Status:** `pending`
-**Owner:** —
+**Status:** `complete`
+**Owner:** Claude
+**Branch:** `feat/notifications`
 
 ---
 

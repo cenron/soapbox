@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { DeletePostsByIdData, DeletePostsByIdErrors, DeletePostsByIdLikeData, DeletePostsByIdLikeErrors, DeletePostsByIdLikeResponses, DeletePostsByIdRepostData, DeletePostsByIdRepostErrors, DeletePostsByIdRepostResponses, DeletePostsByIdResponses, DeleteUsersByUsernameFollowData, DeleteUsersByUsernameFollowErrors, DeleteUsersByUsernameFollowResponses, GetFeedData, GetFeedErrors, GetFeedResponses, GetPostsByIdData, GetPostsByIdErrors, GetPostsByIdRepliesData, GetPostsByIdRepliesErrors, GetPostsByIdRepliesResponses, GetPostsByIdResponses, GetPostsSearchData, GetPostsSearchErrors, GetPostsSearchResponses, GetUsersByUsernameData, GetUsersByUsernameErrors, GetUsersByUsernameFollowersData, GetUsersByUsernameFollowersErrors, GetUsersByUsernameFollowersResponses, GetUsersByUsernameFollowingData, GetUsersByUsernameFollowingErrors, GetUsersByUsernameFollowingResponses, GetUsersByUsernamePostsData, GetUsersByUsernamePostsErrors, GetUsersByUsernamePostsResponses, GetUsersByUsernameResponses, GetUsersSearchData, GetUsersSearchErrors, GetUsersSearchResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthLogoutData, PostAuthLogoutErrors, PostAuthLogoutResponses, PostAuthRefreshData, PostAuthRefreshErrors, PostAuthRefreshResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses, PostMediaByIdConfirmData, PostMediaByIdConfirmErrors, PostMediaByIdConfirmResponses, PostMediaUploadUrlData, PostMediaUploadUrlErrors, PostMediaUploadUrlResponses, PostPostsByIdLikeData, PostPostsByIdLikeErrors, PostPostsByIdLikeResponses, PostPostsByIdRepostData, PostPostsByIdRepostErrors, PostPostsByIdRepostResponses, PostPostsData, PostPostsErrors, PostPostsResponses, PostUsersByUsernameFollowData, PostUsersByUsernameFollowErrors, PostUsersByUsernameFollowResponses, PutUsersMeData, PutUsersMeErrors, PutUsersMeResponses } from './types.gen';
+import type { DeletePostsByIdData, DeletePostsByIdErrors, DeletePostsByIdLikeData, DeletePostsByIdLikeErrors, DeletePostsByIdLikeResponses, DeletePostsByIdRepostData, DeletePostsByIdRepostErrors, DeletePostsByIdRepostResponses, DeletePostsByIdResponses, DeleteUsersByUsernameFollowData, DeleteUsersByUsernameFollowErrors, DeleteUsersByUsernameFollowResponses, GetFeedData, GetFeedErrors, GetFeedResponses, GetNotificationsData, GetNotificationsErrors, GetNotificationsResponses, GetPostsByIdData, GetPostsByIdErrors, GetPostsByIdRepliesData, GetPostsByIdRepliesErrors, GetPostsByIdRepliesResponses, GetPostsByIdResponses, GetPostsSearchData, GetPostsSearchErrors, GetPostsSearchResponses, GetUsersByUsernameData, GetUsersByUsernameErrors, GetUsersByUsernameFollowersData, GetUsersByUsernameFollowersErrors, GetUsersByUsernameFollowersResponses, GetUsersByUsernameFollowingData, GetUsersByUsernameFollowingErrors, GetUsersByUsernameFollowingResponses, GetUsersByUsernamePostsData, GetUsersByUsernamePostsErrors, GetUsersByUsernamePostsResponses, GetUsersByUsernameResponses, GetUsersSearchData, GetUsersSearchErrors, GetUsersSearchResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthLogoutData, PostAuthLogoutErrors, PostAuthLogoutResponses, PostAuthRefreshData, PostAuthRefreshErrors, PostAuthRefreshResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses, PostMediaByIdConfirmData, PostMediaByIdConfirmErrors, PostMediaByIdConfirmResponses, PostMediaUploadUrlData, PostMediaUploadUrlErrors, PostMediaUploadUrlResponses, PostPostsByIdLikeData, PostPostsByIdLikeErrors, PostPostsByIdLikeResponses, PostPostsByIdRepostData, PostPostsByIdRepostErrors, PostPostsByIdRepostResponses, PostPostsData, PostPostsErrors, PostPostsResponses, PostUsersByUsernameFollowData, PostUsersByUsernameFollowErrors, PostUsersByUsernameFollowResponses, PutNotificationsByIdReadData, PutNotificationsByIdReadErrors, PutNotificationsByIdReadResponses, PutNotificationsReadAllData, PutNotificationsReadAllErrors, PutNotificationsReadAllResponses, PutUsersMeData, PutUsersMeErrors, PutUsersMeResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -103,6 +103,39 @@ export const postMediaByIdConfirm = <ThrowOnError extends boolean = false>(optio
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ * List notifications
+ *
+ * Returns the authenticated user's notifications, newest first, with cursor-based pagination.
+ */
+export const getNotifications = <ThrowOnError extends boolean = false>(options?: Options<GetNotificationsData, ThrowOnError>) => (options?.client ?? client).get<GetNotificationsResponses, GetNotificationsErrors, ThrowOnError>({
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/notifications',
+    ...options
+});
+
+/**
+ * Mark all notifications as read
+ *
+ * Marks all of the authenticated user's unread notifications as read.
+ */
+export const putNotificationsReadAll = <ThrowOnError extends boolean = false>(options?: Options<PutNotificationsReadAllData, ThrowOnError>) => (options?.client ?? client).put<PutNotificationsReadAllResponses, PutNotificationsReadAllErrors, ThrowOnError>({
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/notifications/read-all',
+    ...options
+});
+
+/**
+ * Mark notification as read
+ *
+ * Marks a single notification as read. The notification must belong to the authenticated user.
+ */
+export const putNotificationsByIdRead = <ThrowOnError extends boolean = false>(options: Options<PutNotificationsByIdReadData, ThrowOnError>) => (options.client ?? client).put<PutNotificationsByIdReadResponses, PutNotificationsByIdReadErrors, ThrowOnError>({
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/notifications/{id}/read',
+    ...options
 });
 
 /**

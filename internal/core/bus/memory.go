@@ -28,6 +28,7 @@ func (b *memoryBus) Publish(topic string, event any) error {
 	copy(handlers, original)
 	b.mu.RUnlock()
 
+	// Iterates over each handler and start a go routine passing the event to it.
 	for _, h := range handlers {
 		go func(handler func(event any)) {
 			defer func() {

@@ -27,6 +27,7 @@ import (
 	"github.com/radni/soapbox/internal/core/ws"
 	"github.com/radni/soapbox/internal/modules/feed"
 	"github.com/radni/soapbox/internal/modules/media"
+	"github.com/radni/soapbox/internal/modules/notifications"
 	"github.com/radni/soapbox/internal/modules/posts"
 	"github.com/radni/soapbox/internal/modules/users"
 	"github.com/radni/soapbox/web"
@@ -122,6 +123,11 @@ func main() {
 
 	if err := feed.Load(ctx, deps); err != nil {
 		logger.Error("failed to load feed module", "error", err)
+		os.Exit(1)
+	}
+
+	if err := notifications.Load(ctx, deps); err != nil {
+		logger.Error("failed to load notifications module", "error", err)
 		os.Exit(1)
 	}
 
